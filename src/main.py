@@ -1,7 +1,10 @@
 from fastapi import FastAPI
+from src.api.health import router as health_router
 
-app = FastAPI(title = "CNT Gestor API")
+app = FastAPI()
 
-@app.get("/")
-def root():
-    return {"status": "ok"}
+# @app.get("/")
+# def root():
+#     return {"message": "API running"}
+
+app.include_router(health_router, tags=["Health"])
