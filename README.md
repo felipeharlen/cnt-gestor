@@ -58,12 +58,14 @@ of inventory operations.
 ---
 
 ## Project Structure
+```
 cnt-gestor/
 ├── src/
 │ ├── backend/
 │ ├── frontend/
 │ └── docs/
 └── README.md
+```
 
 ---
 
