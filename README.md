@@ -72,8 +72,18 @@ control and eligibility management.
 ```
 cnt-gestor/
 ├── src/
-│ ├── backend/
-│ ├── frontend/
-│ └── docs/
+│ ├── __init__.py
+│ ├── main.py
+│ │
+│ ├── api/
+│ │ ├── __init__.py
+│ │ └── health.py
+│ │
+│ ├── core/
+│ │ └── config.py
+│ │
+│ ├── db/
+│ │ └── db.py
+│
 └── README.md
 ```
