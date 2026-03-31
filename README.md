@@ -1,74 +1,64 @@
 # CNT Gestor
 
-Full-stack project to a system for tracking stock movements of insulin pens.
+Projeto full-stack para o desenvolvimento de um sistema de gerenciamento de canetas aplicadoras de insulina.
 
 ---
 
-## Overview
+## Visão Geral
 
-CNT Gestor is a system designed to register and monitor incoming and outgoing
-insulin pens, providing basic inventory control and traceability.
-It aims to support reliable stock management in healthcare-related contexts,
-with a structure prepared for future expansion.
+O CNT Gestor é um sistema desenvolvido para registrar e monitorar entradas e saídas de canetas aplicadoras de insulina, oferecendo controle básico de inventário e rastreabilidade. Seu objetivo é manter uma gestão confiável desses insumos em contextos relacionados à saúde.
 
 ---
 
-## Problem Domain
+## Domínio do Problema
 
-Managing medical supplies goes beyond tracking stock quantities. In this
-context, insulin applicator pens are distributed to individuals according
-to specific eligibility rules.
+Gerenciar insumos vai além do simples controle de estoque. Neste contexto, canetas aplicadoras de insulina são dispensadas a indivíduos insulino-dependentes conforme regras específicas de elegibilidade previamente estabelecidas.
 
-Each individual may require one or two pens, and once a pen is delivered,
-it remains valid for a fixed period of time (e.g., three years from the first
-use). The system must therefore track deliveries, determine how many pens an
-individual has already received, and identify when they become eligible to
-receive new ones.
+A quantidade de canetas fornecidas a cada indivíduo é definida pela sua prescrição terapêutica. O uso de um único tipo de insulina (NPH ou Regular) dá direito a **uma caneta**, enquanto o uso combinado de NPH e Regular dá direito a **duas canetas**.  
+Uma vez dispensada, cada caneta possui validade de **três anos** a partir da primeira utilização. O sistema deve, portanto, manter o histórico de dispensações, permitindo identificar quantas canetas um indivíduo já recebeu e quando ele se tornará elegível para uma nova dispensação.
 
-CNT Gestor is designed to support these rules by maintaining a clear and
-auditable history of stock movements and deliveries, enabling both inventory
-control and eligibility management.
+O CNT Gestor deverá ser capaz de aplicar essas regras, mantendo um histórico claro e auditável das movimentações, de modo a prover controle de inventário e gestão de elegibilidade.
 
 ---
 
-## Tech Stack
+## Tecnologias Utilizadas
 
 **Backend**
 - Python
 - FastAPI
 
-**Database**
-- SQLite (initial stage)
+**Banco de Dados**
+- SQLite (fase inicial)
 
 **Frontend**
-- Planned (web interface)
+- Planejado (interface web)
 
 ---
 
-## Project Status
+## Status do Projeto
 
-**Current stage:** Early development
+**Estágio atual:** Desenvolvimento inicial
 
-### Implemented
-- Base project structure
-- FastAPI application setup
-- Health check endpoint (`/health`)
+### Implementado
+- Estrutura básica do projeto
+- Configuração da aplicação FastAPI
+- Endpoint de status da aplicação (`/health`)
 
-### In Progress
-- Database configuration
-- Domain modeling for stock movements
+### Em Andamento
+- Configuração do banco de dados
+- Modelagem do domínio de movimentações de estoque
 
-### Planned
-- Stock movement persistence
-- Tracking of pen deliveries per individual
-- Eligibility calculation based on delivery dates
-- REST endpoints for inventory and delivery operations
-- Web frontend
-- Deployment
+### Planejado
+- Persistência das movimentações de estoque
+- Registro das dispensações de canetas por indivíduo
+- Cálculo de elegibilidade com base nas datas de dispensação
+- Endpoints REST para operações de estoque e dispensação
+- Frontend web
+- Implantação
 
 ---
 
-## Project Structure
+## Estrutura do Projeto
 ```
 cnt-gestor/
 ├── src/
