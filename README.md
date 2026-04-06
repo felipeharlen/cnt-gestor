@@ -74,6 +74,9 @@ cnt-gestor/
 │ │
 │ ├── db/
 │ │ └── db.py
+│ │
+│ ├── docs/
+│ │ └── domain-model.md
 │
 └── README.md
 ```
