@@ -1,463 +1,616 @@
 # CNT Gestor — Modelo de Domínio
 
-## 1. Objetivo e escopo
+## 1. Objetivo e Escopo
 
-O CNT Gestor é um sistema para controle administrativo de estoque, movimentações, dispensações e acompanhamento de pacientes que utilizam canetas reutilizáveis de insulina.
+O CNT Gestor é um sistema destinado ao controle administrativo de canetas aplicadoras reutilizáveis de insulina, abrangendo o gerenciamento de estoque, lotes, movimentações, dispensações e acompanhamento da posse desses dispositivos pelos pacientes.
 
-O sistema contempla:
+O sistema deverá permitir:
 
-- Cadastro e acompanhamento de pacientes.
-- Cadastro de tipos de insulina e canetas reutilizáveis.
-- Associação entre canetas e tipos de insulina compatíveis.
-- Histórico de tratamentos dos pacientes.
-- Controle de estoque por lote.
-- Registro de entradas, saídas, transferências e ajustes de estoque.
-- Registro de dispensações realizadas pela UBS e por outras instituições.
-- Controle da quantidade de canetas em posse dos pacientes.
-- Registro de perdas, danos e substituições.
-- Controle do prazo administrativo para nova dispensação.
-- Acompanhamento contínuo das necessidades e do atendimento dos pacientes.
-- Histórico das operações e alterações realizadas.
+- Cadastrar e consultar pacientes.
+- Registrar períodos de acompanhamento territorial.
+- Registrar os tratamentos prescritos aos pacientes.
+- Determinar a necessidade de canetas com base nos tipos de insulina prescritos.
+- Controlar modelos de canetas e suas compatibilidades com os tipos de insulina.
+- Controlar entradas, saídas e transferências de estoque por lote.
+- Registrar dispensações realizadas por diferentes instituições.
+- Acompanhar as quantidades de canetas em posse dos pacientes.
+- Registrar perdas, danos e outras ocorrências.
+- Controlar a elegibilidade administrativa para substituição de canetas.
+- Preservar o histórico das operações e alterações realizadas.
 
-O controle abrange exclusivamente as canetas aplicadoras reutilizáveis. O estoque de insulinas, refis, agulhas e outros materiais não faz parte do escopo.
+### 1.1 Limites do escopo
 
-As canetas serão controladas por quantidade, sem identificação individual das unidades físicas.
+O sistema controla exclusivamente as canetas aplicadoras reutilizáveis.
 
-## 2. Tipos de insulina e canetas
+Não fazem parte do escopo:
 
-O sistema deverá permitir o cadastro de diferentes tipos de insulina e modelos de caneta, possibilitando a inclusão de novos registros sem depender exclusivamente dos modelos inicialmente utilizados.
+- Controle de estoque de insulina.
+- Controle de refis de insulina.
+- Controle de agulhas.
+- Controle de outros materiais ou insumos.
 
-### 2.1. Modelos iniciais
+O sistema não deverá tomar decisões clínicas nem substituir a avaliação dos profissionais responsáveis pela prescrição.
 
-Existem inicialmente dois modelos físicos:
+Sua função é registrar e organizar informações administrativas necessárias ao controle das canetas.
 
-| Modelo de caneta | Insulinas compatíveis |
+## 2. Tipos de Insulina e Modelos de Caneta
+
+O sistema deverá permitir o cadastro de diferentes tipos de insulina e modelos de caneta, mantendo uma relação de compatibilidade entre eles.
+
+Essa relação será utilizada para determinar quais modelos de caneta atendem aos tratamentos prescritos.
+
+### 2.1 Modelos iniciais
+
+Os modelos inicialmente considerados são:
+
+| Modelo de caneta | Tipos de insulina compatíveis |
 |---|---|
 | NPH/Regular | NPH e Regular |
 | Glargina/Lantus | Glargina |
 
-NPH e Regular utilizam o mesmo modelo físico de caneta. Quando ambas estiverem registradas para um paciente, serão necessárias duas unidades desse modelo.
+Os nomes representam modelos de caneta, não tipos de insulina.
 
-### 2.2. Cálculo da quantidade necessária
+### 2.2 Cálculo da necessidade de canetas
 
-A quantidade necessária de cada modelo será calculada conforme os tipos de insulina registrados no tratamento vigente do paciente e suas respectivas associações com as canetas compatíveis.
+A necessidade será determinada com base nos tipos de insulina presentes no tratamento vigente.
 
-| Insulinas utilizadas | NPH/Regular | Glargina/Lantus |
-|---|---:|---:|
-| NPH | 1 | 0 |
-| Regular | 1 | 0 |
-| NPH + Regular | 2 | 0 |
-| Glargina | 0 | 1 |
-| Glargina + Regular | 1 | 1 |
+As regras iniciais são:
 
-A tabela representa a configuração inicial do sistema. A estrutura deverá permitir o cadastro de novos tipos de insulina e canetas.
+| Tratamento prescrito | Necessidade de canetas |
+|---|---|
+| NPH | 1 NPH/Regular |
+| Regular | 1 NPH/Regular |
+| NPH + Regular | 2 NPH/Regular |
+| Glargina | 1 Glargina/Lantus |
+| Glargina + Regular | 1 Glargina/Lantus + 1 NPH/Regular |
 
-## 3. Conceitos do domínio
+O uso simultâneo de NPH e Glargina não faz parte das combinações consideradas válidas no modelo inicial.
 
-### 3.1. Paciente
+O cadastro de novos tipos de insulina e modelos de caneta deverá ser possível sem exigir alterações estruturais nas regras gerais do sistema.
 
-Pessoa cadastrada no sistema para acompanhamento das necessidades e controle das dispensações de canetas.
+A associação entre tipos de insulina e modelos de caneta deverá ser cadastrável, permitindo ampliar as combinações compatíveis.
 
-O cadastro deverá conter:
+## 3. Conceitos do Domínio
+
+### 3.1 Paciente
+
+Representa a pessoa que utiliza ou utilizou canetas aplicadoras de insulina.
+
+Cada pessoa deverá possuir um único cadastro no sistema, independentemente da UBS responsável pelo acompanhamento ou da instituição que realizou uma dispensação.
+
+O cadastro deverá contemplar, no mínimo:
 
 - Nome.
 - Data de nascimento.
 - CPF.
 - CNS.
 
-O paciente possui histórico de tratamentos, dispensações, ocorrências e movimentações de posse.
+Pelo menos um dos documentos, CPF ou CNS, deverá estar informado. Ambos poderão ser cadastrados quando disponíveis.
 
-O sistema deverá distinguir a situação cadastral do paciente de seu vínculo de acompanhamento pela unidade.
+Os documentos deverão identificar o paciente de forma única quando preenchidos. A inclusão posterior de um CPF, por exemplo, não deverá gerar um novo cadastro nem comprometer o histórico anteriormente associado ao CNS.
 
-**Situação cadastral:**
-- Ativo.
-- Inativo.
+O cadastro do paciente deverá ser independente de seu acompanhamento territorial e de sua situação cadastral atual.
 
-**Vínculo de acompanhamento:**
-- Acompanhado pela unidade.
-- Não acompanhado pela unidade.
+Um paciente poderá continuar cadastrado mesmo quando não estiver sendo acompanhado por uma UBS da rede, preservando seu histórico de tratamentos, dispensações, ocorrências e posse de canetas.
 
-O encerramento do acompanhamento não implica a exclusão do paciente nem de seu histórico. O paciente poderá continuar possuindo canetas mesmo após deixar de ser acompanhado pela UBS ou pelo município.
+### 3.2 Situação cadastral do paciente
 
-Caso retorne ao acompanhamento, seu vínculo poderá ser reativado sem perda das informações anteriores.
+A situação cadastral representa a condição administrativa atual do registro do paciente.
 
-O sistema deverá registrar as datas e os motivos de encerramento e retomada do acompanhamento.
+O sistema deverá utilizar três situações:
 
-### 3.2. Tipo de insulina
+- **Ativo (`active`):** cadastro válido e habilitado para operações compatíveis com as demais regras do sistema.
+- **Inativo (`inactive`):** cadastro temporariamente ou definitivamente inabilitado para novas operações.
+- **Incorporado (`merged`):** cadastro duplicado que foi incorporado a outro cadastro pertencente à mesma pessoa.
 
-Representa um tipo de insulina utilizado nos tratamentos registrados no sistema.
+A situação cadastral não deverá ser confundida com o acompanhamento territorial.
 
-Os tipos de insulina serão cadastrados independentemente das canetas, permitindo que novas opções sejam adicionadas futuramente.
+Um paciente ativo poderá estar sem acompanhamento territorial vigente, por exemplo, quando mudar para fora da área de cobertura da rede.
 
-### 3.3. Caneta
+Um paciente inativo não poderá possuir acompanhamento territorial vigente.
 
-Representa um produto ou modelo de caneta reutilizável controlado pelo sistema.
+Um cadastro incorporado não poderá ser utilizado para novas operações. Ele deverá permanecer consultável e direcionar consultas futuras ao cadastro principal.
 
-O cadastro deverá contemplar:
+### 3.3 Acompanhamento territorial
 
-- Identificação.
-- Marca.
-- Tipos de insulina compatíveis.
-- Situação ativa ou inativa.
+Representa o vínculo de um paciente com a UBS responsável por seu acompanhamento territorial durante determinado período.
 
-Uma caneta poderá ser compatível com mais de um tipo de insulina.
+O acompanhamento territorial deverá ser registrado por períodos históricos.
 
-A associação entre tipos de insulina e canetas será utilizada no cálculo da quantidade necessária para cada paciente.
+Um paciente residente na área de cobertura de determinada UBS deverá permanecer acompanhado por ela enquanto residir naquela área.
 
-### 3.4. Tratamento
+Quando o paciente mudar para fora da área de cobertura da UBS, o acompanhamento vigente deverá ser encerrado.
 
-Representa os tipos de insulina prescritos para um paciente durante determinado período.
+Se a mudança ocorrer para a área de outra UBS, deverá ser criado um novo período de acompanhamento para essa instituição, mesmo que ainda não tenha ocorrido atendimento ou dispensação.
 
-O sistema deverá preservar o histórico das alterações de tratamento.
+Se o paciente retornar posteriormente à área de uma UBS com a qual já teve vínculo, deverá ser criado um novo período de acompanhamento. Períodos encerrados não deverão ser reabertos.
 
-Cada registro deverá conter:
+O encerramento do acompanhamento territorial não implica inativação do cadastro do paciente.
 
-- Paciente.
+O acompanhamento territorial também não determina qual instituição poderá realizar uma dispensação. Uma instituição diferente da UBS responsável pelo acompanhamento poderá realizar a entrega de canetas.
+
+### 3.4 Tipo de insulina
+
+Representa cada tipo de insulina utilizado nos tratamentos dos pacientes.
+
+O sistema deverá permitir o cadastro e a manutenção de diferentes tipos de insulina, sem limitar sua estrutura aos tipos inicialmente considerados.
+
+A compatibilidade com os modelos de caneta deverá ser definida por uma associação cadastrável.
+
+### 3.5 Modelo de caneta
+
+Representa o modelo de caneta aplicadora reutilizável.
+
+O controle será realizado por modelo, lote e quantidade, não por identificação individual de cada unidade física.
+
+Um modelo poderá ser compatível com um ou mais tipos de insulina.
+
+O sistema deverá permitir o cadastro de novos modelos e suas respectivas compatibilidades.
+
+### 3.6 Tratamento
+
+Representa o conjunto de tipos de insulina prescritos a um paciente durante determinado período.
+
+O tratamento deverá manter seu histórico, permitindo identificar quais tipos de insulina foram prescritos em cada período.
+
+Cada alteração deverá ser fundamentada em uma nova prescrição.
+
+O registro deverá contemplar:
+
 - Tipos de insulina prescritos.
 - Data de início da vigência.
-- Data de término da vigência, quando aplicável.
-- Médico responsável pela prescrição.
-- Identificação do médico: nome, CRM e UF.
+- Data de encerramento, quando aplicável.
+- Identificação do médico prescritor, incluindo nome, CRM e UF.
 - Operador responsável pelo registro.
-- Data e hora do registro no sistema.
-- Observação, quando necessária.
+- Data e horário do registro.
 
-O tratamento vigente será utilizado para calcular a necessidade atual de canetas.
+O sistema não deverá decidir qual tratamento é clinicamente adequado. Sua responsabilidade será registrar a prescrição e utilizar os tipos de insulina informados para calcular a necessidade administrativa de canetas.
 
-Toda alteração deverá ocorrer mediante apresentação de receita que identifique o médico prescritor.
+### 3.7 Lote
 
-A data de início da vigência deverá representar quando o tratamento passou a valer, independentemente da data em que a alteração foi cadastrada no sistema.
+Representa o lote de fabricação de determinado modelo de caneta.
 
-Os tratamentos anteriores deverão permanecer disponíveis para consulta.
+O controle de estoque deverá identificar o modelo, o lote e a quantidade disponível.
 
-O armazenamento de imagens ou arquivos das receitas poderá ser avaliado em uma etapa futura.
+O lote deverá permitir rastrear as entradas e saídas de estoque e as dispensações realizadas.
 
-### 3.5. Lote
+A identificação individual de cada caneta não será necessária.
 
-Representa um lote de fabricação de determinado modelo de caneta.
+### 3.8 Estoque
 
-Cada lote está associado a uma caneta e possui:
+Representa a quantidade disponível de canetas por modelo e lote em determinada instituição.
 
-- Código de identificação.
-- Data de fabricação, quando disponível.
-- Validade do fabricante, quando aplicável.
+O estoque deverá ser controlado por movimentações registradas, incluindo entradas, saídas, transferências e ajustes autorizados.
 
-Um mesmo lote poderá ser recebido em diferentes entregas pela UBS.
+O saldo deverá ser obtido a partir do histórico dessas movimentações, preservando a rastreabilidade de sua formação.
 
-A quantidade recebida não deverá ser armazenada como atributo definitivo do lote, pois cada recebimento representa uma operação independente.
+O sistema deverá permitir que diferentes instituições possuam estoques próprios.
 
-### 3.6. Movimentação de estoque
+### 3.9 Movimentação de estoque
 
-Representa uma alteração na quantidade de canetas disponíveis no estoque da UBS.
+Representa qualquer operação que altere a quantidade de canetas disponível no estoque de uma instituição.
 
-O controle será realizado por caneta e lote.
+As movimentações poderão incluir:
 
-As movimentações deverão contemplar:
+- Entrada de estoque.
+- Saída de estoque.
+- Transferência entre instituições.
+- Ajuste de estoque.
 
-**Entradas:**
-- Recebimento de fornecedor, CAF ou Estado.
-- Recebimento por transferência de outra instituição.
+Cada movimentação deverá identificar, conforme sua natureza:
 
-**Saídas:**
-- Dispensação ao paciente.
-- Transferência para outra UBS ou instituição.
+- Modelo e lote envolvidos.
+- Quantidade movimentada.
+- Instituição de origem e/ou destino.
+- Data da operação.
+- Operador responsável.
+- Justificativa, quando necessária.
 
-**Ajustes:**
-- Perdas.
-- Avarias.
-- Divergências de inventário.
-- Correções de registros.
+As movimentações deverão preservar seu histórico e não poderão ser removidas fisicamente para corrigir erros.
 
-Cada movimentação deverá preservar a identificação do lote, a quantidade, a data, o tipo de operação e o operador responsável.
+### 3.10 Entrada de estoque
 
-Nas transferências, deverá ser identificada a instituição de origem ou destino, conforme a operação.
+Representa o recebimento de canetas por uma instituição.
 
-Os ajustes de estoque exigirão justificativa obrigatória e identificação do operador responsável. Não haverá exigência de aprovação por um segundo responsável.
+A entrada deverá identificar o modelo, o lote e a quantidade recebida.
 
-Correções não deverão apagar ou sobrescrever silenciosamente movimentações anteriores.
+Quando aplicável, deverá permitir identificar a instituição ou entidade de origem do recebimento.
 
-### 3.7. Entrada de estoque
+Uma entrada poderá corresponder ao recebimento de uma transferência, ao abastecimento por uma entidade externa ou a outra operação de recebimento reconhecida pelo sistema.
 
-Representa o recebimento de determinada quantidade de canetas de um lote.
-
-Cada entrada deverá possuir registro próprio, contendo:
-
-- Lote.
-- Quantidade recebida.
-- Data de entrada.
-- Origem ou fornecedor.
-- Responsável pelo registro.
-
-Um mesmo lote poderá possuir várias entradas independentes.
-
-### 3.8. Dispensação
+### 3.11 Dispensação
 
 Representa a entrega de uma ou mais canetas a um paciente.
 
-Uma dispensação poderá conter diferentes modelos de caneta e diferentes lotes.
-
-O registro principal deverá conter:
+Cada operação deverá registrar:
 
 - Paciente.
-- Data efetiva da dispensação.
-- Origem da dispensação.
-- Responsável pelo registro.
-- Motivo, quando aplicável.
-- Data e hora do registro no sistema.
-
-Cada item da dispensação deverá conter:
-
+- Instituição responsável pela dispensação.
 - Modelo de caneta.
-- Lote, quando identificado.
-- Quantidade dispensada.
-
-As dispensações realizadas pela UBS deverão obrigatoriamente identificar o lote e movimentar o estoque local.
-
-As dispensações realizadas por outras instituições deverão ser registradas no histórico do paciente, sem alterar o estoque da UBS.
-
-Quando disponível, o lote das dispensações externas também poderá ser informado.
-
-A origem deverá permitir identificar a instituição responsável, incluindo a própria UBS, outras UBS, CAF, Estado, outro município ou outras instituições pertinentes.
-
-O sistema deverá permitir registros retroativos, preservando a diferença entre a data efetiva da dispensação e a data de lançamento no sistema.
-
-Quando a data efetiva for desconhecida, não deverá ser inventada uma data para cálculo do prazo administrativo.
-
-### 3.9. Ocorrência
-
-Representa uma perda ou dano de canetas em posse de um paciente.
-
-O registro deverá conter:
-
-- Paciente.
-- Modelo de caneta.
-- Quantidade afetada.
-- Tipo de ocorrência.
-- Data da ocorrência.
-- Lote, quando identificado.
-- Informações pertinentes à documentação apresentada.
+- Lote, quando conhecido.
+- Quantidade entregue.
+- Data da dispensação.
 - Operador responsável.
-- Data e hora do registro.
+- Tratamento considerado na operação, quando disponível.
 
-Conforme o procedimento operacional adotado pela UBS, perdas ou danos ocorridos antes do término do prazo administrativo de três anos exigem apresentação de Boletim de Ocorrência (BO) para solicitação de reposição ao Estado.
+A instituição responsável pela dispensação não precisa ser a mesma UBS responsável pelo acompanhamento territorial.
 
-O sistema deverá apresentar, durante o registro da ocorrência, os lotes que possuem saldo atribuído ao paciente para o modelo selecionado.
+O sistema deverá permitir o registro de dispensações realizadas por:
 
-O operador poderá selecionar um ou mais lotes e informar a quantidade afetada em cada um.
+- UBS responsável pelo acompanhamento.
+- Outra UBS.
+- CAF.
+- Estado.
+- Instituição de outro município.
+- Outra instituição reconhecida pelo sistema.
 
-A quantidade informada não poderá ultrapassar o saldo disponível do lote para aquele paciente.
+O histórico de dispensações deverá ser preservado, inclusive quando o paciente mudar de UBS, alterar seu tratamento ou deixar de ser acompanhado pela rede.
 
-Quando não for possível identificar o lote, a ocorrência poderá ser registrada sem essa informação. Nessa situação, deverá ser utilizada uma regra de alocação alternativa, ainda a ser detalhada.
+### 3.12 Posse de canetas
 
-As ocorrências reduzem a quantidade de canetas utilizáveis em posse do paciente e permanecem no histórico.
+Representa as quantidades de canetas que permanecem sob posse do paciente.
 
-### 3.10. Reposição
+A posse deverá ser acompanhada por modelo e, quando conhecido, por lote.
 
-Representa o recebimento de novas canetas pelo paciente em decorrência de perda, dano ou outra situação que exija substituição.
+O histórico de posse deverá considerar:
 
-A ocorrência e a reposição serão registros independentes.
+- Dispensações realizadas.
+- Perdas.
+- Danos.
+- Reposições.
+- Outras movimentações que alterem a quantidade em posse.
 
-A ocorrência não deverá gerar automaticamente uma reposição.
+A necessidade atual do paciente deverá ser calculada a partir do tratamento vigente.
 
-Quando o Estado fornecer uma nova caneta, ela será registrada como uma nova dispensação, com origem identificada como Estado.
+A posse, entretanto, deverá preservar as canetas recebidas anteriormente, mesmo quando o tratamento for alterado.
 
-A reposição não movimentará o estoque da UBS.
+Assim, a mudança de tratamento não deverá apagar nem desconsiderar automaticamente as canetas anteriormente dispensadas.
 
-Cada nova dispensação terá sua própria data de referência para cálculo do prazo administrativo.
+Uma caneta de modelo compatível poderá continuar sendo considerada na disponibilidade do paciente, desde que permaneça utilizável e atenda às regras administrativas de validade e substituição.
 
-## 4. Regras de negócio
+O sistema deverá distinguir a necessidade atual da quantidade efetivamente em posse do paciente.
 
-### 4.1. Necessidade e posse do paciente
+### 3.13 Ocorrência
 
-O sistema deverá manter separadas as seguintes informações:
+Representa uma situação relacionada às canetas que estão ou estiveram em posse do paciente.
 
-**Necessidade atual:**
+As ocorrências poderão incluir:
 
-Quantidade de canetas exigida pelo tratamento vigente, calculada conforme os tipos de insulina utilizados e suas associações com os modelos de caneta.
+- Perda.
+- Dano.
+- Outras situações que comprometam a disponibilidade ou utilização da caneta.
 
-**Posse registrada:**
+O registro deverá identificar o paciente, a natureza da ocorrência, a data, a descrição e o operador responsável.
 
-Quantidade de canetas atribuída ao paciente, considerando as dispensações e ocorrências registradas.
+Quando possível, a ocorrência deverá identificar os modelos, lotes e quantidades envolvidos.
 
-**Posse ativa:**
+Uma ocorrência não deverá provocar automaticamente uma movimentação de entrada no estoque da UBS.
 
-Quantidade que permanece atribuída ao paciente e ainda é considerada utilizável para fins de controle administrativo.
+### 3.14 Reposição
 
-**Quantidade elegível:**
+Representa a entrega de uma nova caneta para substituir uma unidade perdida, danificada ou indisponível.
 
-Quantidade que cumpriu o prazo administrativo de três anos e pode ser considerada para nova dispensação, conforme a necessidade atual.
+A reposição deverá estar relacionada à ocorrência que a motivou.
 
-Essas informações deverão ser calculadas separadamente.
+A reposição regular deverá respeitar o prazo administrativo estabelecido para substituição.
 
-A necessidade não deverá ser armazenada como um valor fixo no cadastro do paciente, pois depende do tratamento vigente e das associações entre insulinas e canetas.
+Uma reposição excepcional antes desse prazo dependerá de autorização do Estado, conforme o procedimento aplicável.
 
-### 4.2. Alterações de tratamento
+O registro da ocorrência, isoladamente, não autoriza uma reposição excepcional.
 
-Uma alteração no tratamento deverá atualizar a necessidade calculada do paciente.
+A reposição deverá ser registrada como operação própria, preservando a relação com a ocorrência e a autorização correspondente, quando exigida.
 
-As dispensações anteriores e a posse histórica deverão ser preservadas.
+## 4. Regras de Negócio
 
-A alteração do tratamento não deverá apagar, devolver ou modificar automaticamente as canetas anteriormente dispensadas.
+### 4.1 Necessidade e posse
 
-Canetas de modelos que deixaram de ser necessários permanecerão registradas na posse do paciente, respeitando seu prazo administrativo e eventuais ocorrências.
+A necessidade de canetas deverá ser calculada a partir dos tipos de insulina prescritos no tratamento vigente.
 
-### 4.3. Controle da posse por lote e dispensação
+A quantidade necessária deverá respeitar as regras de compatibilidade e as combinações definidas para os modelos de caneta.
 
-O saldo de posse será calculado a partir das dispensações e ocorrências.
+A quantidade em posse do paciente deverá ser controlada independentemente da necessidade atual.
 
-Sempre que possível, a quantidade em posse deverá permanecer associada ao lote e à dispensação de origem.
+A alteração do tratamento não deverá apagar o histórico de posse nem remover automaticamente as canetas anteriormente dispensadas.
 
-Isso permitirá identificar quais quantidades foram recebidas, quando foram dispensadas e quais foram afetadas por perdas, danos ou pelo término do prazo administrativo.
+O sistema deverá permitir identificar:
 
-Quando o lote não estiver identificado, o sistema deverá utilizar uma regra alternativa de alocação cronológica entre as dispensações com saldo disponível.
+- Quantidade necessária pelo tratamento atual.
+- Quantidade em posse do paciente.
+- Quantidade considerada disponível para utilização.
+- Eventual diferença entre necessidade e disponibilidade.
 
-### 4.4. Controle de estoque
+### 4.2 Alterações de tratamento
 
-O estoque será controlado por caneta e lote.
+Toda alteração de tratamento deverá ser registrada com base em uma nova prescrição.
 
-Toda entrada, saída ou ajuste deverá gerar uma movimentação correspondente.
+O tratamento anterior deverá ter sua vigência encerrada, e um novo período deverá ser registrado.
 
-A quantidade disponível de cada lote deverá refletir as movimentações registradas.
+Os registros históricos deverão permanecer preservados.
 
-As operações de transferência deverão permitir registrar entradas e saídas entre instituições.
+A alteração do tratamento deverá atualizar o cálculo da necessidade de canetas, sem modificar automaticamente as quantidades anteriormente dispensadas ou em posse do paciente.
 
-A devolução de canetas por pacientes não será prevista como operação normal, pois uma vez dispensadas, as canetas não retornam ao estoque da unidade.
+O sistema não deverá exigir que as canetas anteriormente entregues sejam devolvidas à UBS quando houver mudança de tratamento.
 
-A validade do fabricante é independente do prazo administrativo de dispensação ao paciente.
+### 4.3 Posse por modelo e lote
 
-### 4.5. Prazo administrativo de dispensação
+O controle de posse deverá considerar as dispensações e demais ocorrências que alterem as quantidades em posse do paciente.
 
-A regra operacional da UBS estabelece um intervalo de três anos para a substituição regular de canetas.
+Quando o lote for conhecido, deverá ser preservado para rastreabilidade.
 
-O prazo será contado a partir da data efetiva da dispensação.
+Quando o lote de uma dispensação histórica ou externa for desconhecido, o sistema deverá permitir registrar essa ausência de informação sem inventar um lote.
 
-O cálculo deverá ocorrer individualmente para cada quantidade dispensada, considerando seu respectivo registro de origem.
+A quantidade em posse deverá ser calculada a partir dos registros disponíveis, respeitando as ocorrências que reduzam ou alterem a disponibilidade.
 
-Dispensações realizadas em datas diferentes deverão manter seus prazos independentes, mesmo quando referentes ao mesmo paciente e modelo.
+### 4.4 Estoque
 
-A ocorrência de perda ou dano deverá reduzir a quantidade ainda atribuída à dispensação correspondente.
+O estoque deverá ser controlado por instituição, modelo de caneta e lote.
 
-Quando uma quantidade completar três anos, passará a ser considerada não utilizável para fins do controle administrativo e deixará de compor a posse ativa do paciente.
+Toda entrada ou saída deverá gerar um registro de movimentação.
 
-O registro histórico deverá permanecer preservado.
+Uma saída não poderá resultar em saldo negativo.
 
-A nova dispensação, quando realizada, iniciará seu próprio prazo de três anos.
+Transferências entre instituições deverão preservar a identificação da origem e do destino.
 
-O sistema deverá atualizar automaticamente a elegibilidade de cada quantidade e apresentar alertas aos operadores sobre pacientes com quantidades elegíveis.
+O histórico de movimentações deverá ser suficiente para reconstruir a evolução do estoque.
 
-A elegibilidade não implica dispensação automática. A necessidade atual do tratamento também deverá ser considerada.
+Correções de movimentações não deverão apagar registros anteriores. Deverão ocorrer por meio de operações de ajuste ou correção rastreáveis.
 
-Quando a data efetiva de uma dispensação anterior não estiver disponível, o prazo correspondente não poderá ser determinado até que a informação seja obtida.
+### 4.5 Prazo administrativo de substituição
 
-A alteração das insulinas registradas poderá gerar necessidade de outro modelo de caneta, cujo controle deverá considerar o histórico de dispensações daquele modelo.
+O prazo administrativo regular para substituição de uma caneta será de três anos.
 
-### 4.6. Perda, dano e substituição
+A regra do fabricante considera o primeiro uso da caneta. Entretanto, como a data efetiva do primeiro uso pode não estar disponível, o sistema utilizará a data da dispensação como referência administrativa para o cálculo.
 
-Perdas e danos reduzem a posse ativa do paciente.
+O prazo deverá ser controlado por quantidade dispensada, modelo e lote, respeitando cada ciclo de dispensação.
 
-A solicitação de reposição ao Estado não deverá ser confundida com a reposição efetivamente recebida.
+A data da dispensação será uma referência operacional, não uma afirmação de que a caneta foi efetivamente utilizada pela primeira vez naquele dia.
 
-Quando uma reposição acontecer, deverá ser registrada como nova dispensação, preservando a ocorrência original.
+Quando a data de uma dispensação anterior for desconhecida, o sistema deverá registrar essa ausência de informação.
 
-A substituição de quantidades que cumpriram o prazo administrativo também deverá ser registrada como nova dispensação, mantendo o histórico da quantidade anterior como não utilizável.
+Nesses casos, não deverá inventar uma data nem calcular a elegibilidade como se a data fosse conhecida.
 
-### 4.7. Dispensações parciais e atendimento
+A reposição antes do prazo de três anos somente poderá ocorrer em caráter excepcional, mediante autorização do Estado após a ocorrência correspondente, como perda ou dano.
 
-O sistema deverá permitir dispensações parciais quando o estoque disponível for inferior à quantidade necessária e elegível para atendimento.
+### 4.6 Perda, dano e substituição
 
-Deverão ser registradas apenas as quantidades efetivamente dispensadas.
+Perdas e danos deverão ser registrados como ocorrências.
 
-O sistema deverá atualizar o estoque e a posse do paciente conforme a quantidade entregue.
+Sempre que possível, o registro deverá identificar o modelo, o lote e a quantidade afetada.
 
-A quantidade restante deverá continuar identificada como necessidade pendente de atendimento.
+A ocorrência deverá ser associada à posse do paciente, permitindo atualizar a quantidade considerada disponível.
 
-O prazo administrativo de três anos será iniciado somente para as quantidades efetivamente dispensadas.
+A substituição deverá respeitar o prazo administrativo regular ou possuir autorização excepcional válida.
 
-### 4.8. Acompanhamento contínuo dos pacientes
+A ocorrência não deverá gerar devolução fictícia ao estoque.
 
-O sistema deverá manter acompanhamento contínuo das necessidades e do atendimento dos pacientes, sem depender de fechamentos mensais.
+Quando houver recebimento físico posterior de uma caneta, essa operação deverá ser registrada separadamente.
 
-Os indicadores deverão ser atualizados conforme ocorram alterações de tratamento, dispensações, ocorrências, vencimentos administrativos e mudanças no vínculo de acompanhamento.
+### 4.7 Dispensações parciais
 
-O sistema deverá permitir identificar, entre os pacientes acompanhados pela unidade:
+O sistema deverá permitir dispensações parciais quando a instituição não possuir quantidade suficiente para atender à necessidade calculada.
 
-- Pacientes com necessidade integralmente atendida.
-- Pacientes que precisam receber canetas, mas ainda não receberam nenhuma quantidade elegível.
-- Pacientes parcialmente atendidos.
-- Pacientes sem necessidade pendente de atendimento.
+Deverá ser possível identificar a quantidade necessária, a quantidade já entregue e a quantidade ainda pendente.
 
-A classificação deverá considerar a necessidade atual, a posse ativa e a quantidade elegível, evitando confundir pacientes que possuem canetas dentro do prazo administrativo com pacientes que precisam receber novas unidades.
+O sistema deverá permitir que o atendimento seja concluído por mais de uma operação de dispensação, preservando as datas, os lotes e os operadores envolvidos.
 
-Também deverão ser disponibilizados indicadores de quantidade de canetas necessárias, dispensadas e pendentes, separados por modelo.
+A necessidade não atendida deverá permanecer identificável até sua resolução ou alteração por uma nova prescrição.
 
-Os pacientes não acompanhados pela unidade não deverão ser contabilizados como pendências de atendimento local, embora seu histórico e sua posse continuem registrados.
+### 4.8 Acompanhamento contínuo e indicadores
 
-### 4.9. Encerramento e retomada do acompanhamento
+O sistema deverá permitir identificar pacientes:
 
-O paciente poderá deixar de ser acompanhado pela unidade sem que seu cadastro seja excluído ou seu saldo de canetas seja zerado.
+- Com necessidade de canetas.
+- Com atendimento integral.
+- Com atendimento parcial.
+- Sem atendimento registrado.
+- Sem acompanhamento territorial vigente.
 
-O encerramento do acompanhamento deverá registrar data e motivo.
+Os indicadores deverão considerar a necessidade calculada a partir do tratamento vigente e as quantidades efetivamente dispensadas.
 
-A posse e o histórico de dispensações continuarão preservados, inclusive quando houver dispensações realizadas por outras instituições.
+A ausência de acompanhamento territorial não deverá apagar o histórico nem impedir consultas administrativas sobre o paciente.
 
-O acompanhamento poderá ser retomado posteriormente, sem perda do histórico.
+### 4.9 Encerramento e retomada do acompanhamento territorial
 
-A inativação cadastral será independente do encerramento do acompanhamento. Pacientes que deixarem de utilizar insulina, falecerem ou tiverem outra situação que justifique a inativação poderão permanecer registrados para fins históricos.
+O acompanhamento territorial será encerrado quando o paciente mudar para fora da área de cobertura da UBS responsável.
 
-## 5. Histórico e rastreabilidade
+O encerramento deverá registrar a data em que o paciente deixou a área de cobertura.
 
-As operações deverão preservar o histórico de movimentações e alterações realizadas.
+Não será necessário registrar um motivo variável de encerramento, pois a mudança para fora da área de cobertura é a razão prevista para essa operação.
 
-O sistema deverá permitir consultar:
+Quando o paciente passar a residir na área de outra UBS, deverá ser criado imediatamente um novo período de acompanhamento, mesmo que ainda não tenha ocorrido atendimento ou dispensação.
 
+Quando retornar à área de uma UBS anteriormente responsável, deverá ser criado outro período, sem reabrir o registro encerrado.
+
+Um paciente ativo poderá permanecer sem acompanhamento territorial vigente quando estiver fora da área de cobertura da rede.
+
+### 4.10 Inativação cadastral
+
+A inativação representa a suspensão administrativa do cadastro do paciente.
+
+A operação deverá exigir uma justificativa selecionada a partir de uma lista controlada de motivos.
+
+Deverá existir a opção `other`, que exigirá uma descrição manual obrigatória.
+
+O sistema deverá registrar:
+
+- Situação anterior.
+- Nova situação.
+- Motivo da alteração.
+- Descrição complementar, quando aplicável.
+- Operador responsável.
+- Data e horário do registro.
+
+A inativação deverá encerrar automaticamente qualquer acompanhamento territorial vigente.
+
+A operação deverá preservar os históricos de acompanhamento, tratamento, dispensações, ocorrências e posse de canetas.
+
+Um paciente inativo não poderá receber novas dispensações nem realizar operações incompatíveis com essa situação.
+
+A inativação não deverá gerar devolução automática de canetas ao estoque.
+
+### 4.11 Falecimento
+
+O falecimento deverá possuir um procedimento próprio de registro no cadastro do paciente.
+
+Após a confirmação, o sistema deverá:
+
+- Registrar a data do falecimento, quando conhecida.
+- Registrar a data e o horário em que a informação foi inserida no sistema.
+- Identificar o operador responsável pelo registro.
+- Alterar a situação cadastral para `inactive`.
+- Registrar o motivo de inativação como `death`.
+- Encerrar o acompanhamento territorial vigente.
+- Bloquear novas dispensações e operações incompatíveis.
+
+A data do falecimento e a data de registro deverão ser informações distintas.
+
+O falecimento não deverá apagar o histórico do paciente nem provocar devolução automática das canetas ao estoque.
+
+Caso ocorra recebimento físico posterior de canetas, deverá ser registrada uma operação independente.
+
+Se o falecimento tiver sido registrado equivocadamente, não deverá ser permitida uma reativação administrativa simples. A correção deverá seguir procedimento formal, preservando a rastreabilidade do registro original e de sua correção.
+
+### 4.12 Reativação cadastral
+
+A reativação será permitida somente para cadastros com situação `inactive`.
+
+Cadastros com situação `merged` não poderão ser reativados.
+
+A operação deverá exigir justificativa selecionada a partir de uma lista controlada de motivos.
+
+Deverá existir a opção `other`, com descrição manual obrigatória.
+
+A reativação deverá registrar o operador responsável, a data e o horário da operação.
+
+A reativação deverá exigir a identificação da UBS responsável pelo novo acompanhamento territorial.
+
+A operação deverá criar um novo período de acompanhamento, sem reabrir períodos anteriores.
+
+A reativação cadastral e a criação do novo acompanhamento deverão ocorrer como uma única operação: ambas serão concluídas ou nenhuma será aplicada.
+
+Cadastros inativados por falecimento não poderão ser reativados por esse procedimento. Eventuais erros no registro de falecimento deverão ser tratados por correção formal.
+
+### 4.13 Unificação de cadastros
+
+A unificação deverá ser utilizada quando for identificado que dois ou mais cadastros pertencem à mesma pessoa.
+
+A operação dependerá de confirmação explícita do operador de que os registros representam o mesmo indivíduo.
+
+O operador deverá selecionar qual cadastro permanecerá como principal.
+
+Antes da confirmação, o sistema deverá apresentar os dados e históricos envolvidos, além de um resumo das informações que serão associadas ao cadastro principal.
+
+A operação deverá ser atômica, impedindo que apenas parte dos registros seja incorporada.
+
+Somente cadastros com situação `active` poderão participar diretamente de uma unificação.
+
+Cadastros inativos deverão passar por avaliação e eventual reativação administrativa antes da unificação.
+
+Cadastros com registro de falecimento não poderão ser reativados apenas para viabilizar uma unificação. Se o falecimento tiver sido registrado equivocadamente, será necessária correção formal.
+
+Após a unificação:
+
+- O cadastro principal permanecerá ativo.
+- O cadastro incorporado receberá a situação `merged`.
+- O cadastro incorporado deverá apontar para o cadastro principal.
+- O cadastro incorporado permanecerá consultável.
+- O cadastro incorporado não poderá receber novas operações.
+- Consultas futuras pelos documentos associados ao cadastro incorporado deverão direcionar ao cadastro principal.
+- Os históricos dos cadastros envolvidos deverão ser preservados.
+- A origem dos registros deverá continuar identificável.
+
+A unificação não deverá apagar o cadastro incorporado nem eliminar a rastreabilidade dos registros históricos.
+
+## 5. Histórico e Rastreabilidade
+
+O sistema deverá preservar o histórico das operações administrativas realizadas.
+
+Deverão ser rastreáveis:
+
+- Cadastro e alterações cadastrais de pacientes.
+- Inativações e reativações.
+- Registros e correções de falecimento.
+- Unificações de cadastros.
+- Períodos de acompanhamento territorial.
+- Alterações de tratamento.
+- Prescrições associadas aos tratamentos.
 - Entradas e saídas de estoque.
 - Transferências entre instituições.
-- Ajustes de estoque e respectivas justificativas.
-- Dispensações por paciente, modelo, lote, origem e período.
-- Histórico de tratamentos e suas alterações.
-- Médico prescritor e operador responsável pelas alterações de tratamento.
-- Quantidades historicamente recebidas por paciente.
-- Quantidades em posse ativa.
-- Quantidades não utilizáveis por prazo administrativo cumprido.
-- Ocorrências de perda ou dano.
-- Reposições realizadas.
-- Situação de acompanhamento dos pacientes.
-- Elegibilidade para nova dispensação.
+- Dispensações e respectivos itens.
+- Lotes envolvidos nas operações.
+- Ocorrências de perda e dano.
+- Reposições e autorizações excepcionais.
+- Operadores responsáveis pelas operações.
 
-Os registros históricos não deverão ser apagados ou sobrescritos de maneira que comprometa a rastreabilidade.
+Os registros históricos e transacionais deverão permanecer consultáveis, mesmo quando o paciente ou outra entidade cadastral deixar de estar ativa.
 
-Correções deverão preservar o registro da operação original e permitir identificar a alteração realizada.
+A rastreabilidade deverá permitir compreender não apenas a situação atual, mas também os eventos que levaram a ela.
 
-O sistema deverá distinguir a data em que uma operação efetivamente ocorreu da data em que foi registrada.
+## 6. Limites do Sistema
 
-## 6. Limites do sistema
+O CNT Gestor terá natureza administrativa e operacional.
 
-O CNT Gestor é destinado ao controle administrativo de estoque, movimentações, dispensações e acompanhamento da posse e das necessidades de canetas reutilizáveis.
+O sistema não deverá:
 
-Não fazem parte do escopo:
+- Prescrever tratamentos.
+- Determinar alterações clínicas.
+- Substituir a avaliação médica.
+- Presumir datas de primeiro uso ou dispensações desconhecidas.
+- Inventar lotes para registros históricos incompletos.
+- Considerar uma ocorrência como autorização automática de reposição.
+- Gerar devoluções fictícias de canetas ao estoque.
+- Apagar históricos para simplificar cadastros ou corrigir operações.
 
-- Controle de estoque de insulinas, refis ou agulhas.
-- Identificação individual de cada caneta física.
-- Controle do conteúdo ou utilização dos refis.
-- Registro de aplicações de insulina.
-- Prescrição ou decisão clínica sobre o tratamento.
-- Avaliação da adequação clínica de tratamentos.
-- Substituição dos procedimentos e responsabilidades dos profissionais de saúde.
+As informações clínicas serão utilizadas somente na medida necessária para calcular a necessidade administrativa de canetas e preservar o histórico dos tratamentos prescritos.
 
-## 7. Decisões pendentes de detalhamento
+## 7. Decisões Pendentes de Detalhamento
 
-Os seguintes pontos ainda precisam ser definidos antes da consolidação do modelo de dados:
+Os seguintes pontos ainda dependem de definições mais específicas antes da implementação:
 
-1. **Compatibilidade entre insulinas e canetas:** definir a regra de cálculo caso um mesmo tipo de insulina seja compatível com mais de um modelo de caneta.
-2. **Ocorrências sem identificação de lote:** detalhar a regra de alocação cronológica das quantidades afetadas quando o paciente não souber informar o lote.
-3. **Lotes de dispensações externas:** definir como registrar a identificação de lotes que não pertencem ao estoque local da UBS.
-4. **Classificação de atendimento:** detalhar os critérios de classificação e os indicadores do painel, inclusive para pacientes sem necessidade pendente.
-5. **Registros de dispensações antigas:** definir como tratar quantidades históricas cuja data de dispensação ou lote não estejam disponíveis.
-6. **Transferências:** detalhar os dados e procedimentos de registro das instituições de origem e destino.
-7. **Ajustes de estoque:** detalhar as categorias, os motivos e os procedimentos específicos para cada tipo de ajuste.
+### 7.1 Compatibilidade múltipla
 
-Esses pontos não impedem a definição conceitual das entidades principais, mas deverão ser resolvidos antes ou durante a elaboração do modelo relacional.
+Definir como o sistema tratará novos modelos de caneta e combinações de compatibilidade que não estejam previstas nas regras iniciais.
 
----
+### 7.2 Ocorrências sem identificação de lote
 
-**Documento de referência:** este modelo descreve os conceitos e as regras de negócio do CNT Gestor. A estrutura de tabelas, atributos técnicos, chaves, restrições e relacionamentos do banco de dados será detalhada posteriormente no documento `data-model.md`.
+Definir quais informações mínimas serão exigidas quando o paciente não souber informar o lote da caneta envolvida.
+
+### 7.3 Lotes de dispensações externas
+
+Definir como serão registrados os lotes desconhecidos em dispensações realizadas por outras instituições.
+
+### 7.4 Classificação dos atendimentos
+
+Detalhar os critérios operacionais para classificar pacientes como atendidos, parcialmente atendidos ou ainda não atendidos.
+
+### 7.5 Dispensações antigas sem data conhecida
+
+Definir como serão importados e apresentados registros históricos incompletos, sem atribuir datas artificiais.
+
+### 7.6 Transferências entre instituições
+
+Detalhar o fluxo operacional e as informações necessárias para registrar transferências de estoque entre instituições.
+
+### 7.7 Ajustes de estoque
+
+Definir os tipos de ajuste permitidos, as justificativas obrigatórias e os níveis de autorização necessários.
+
+### 7.8 Situação das canetas em posse
+
+Detalhar como serão representadas as condições de utilização, indisponibilidade, perda e dano, distinguindo a posse física da disponibilidade para uso.
+
+### 7.9 Motivos de inativação e reativação
+
+Definir as opções específicas das listas controladas de motivos, incluindo os critérios para utilização da opção `other`.
+
+### 7.10 Correção de falecimento
+
+Detalhar o procedimento formal para corrigir um registro de falecimento realizado equivocadamente, incluindo as autorizações e os registros necessários.
+
+### 7.11 Armazenamento de prescrições
+
+Definir como os documentos de prescrição serão armazenados, consultados e associados aos respectivos tratamentos.
+
+### 7.12 Autorização de reposição excepcional
+
+Detalhar as informações documentais necessárias para registrar e validar uma autorização estadual de reposição antecipada.
