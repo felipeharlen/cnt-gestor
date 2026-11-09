@@ -2,705 +2,578 @@
 
 ## 1. Objetivo
 
-Este documento define o modelo de dados do CNT Gestor, descrevendo como as informações do domínio serão persistidas no banco de dados.
+Este documento define o modelo de dados do CNT Gestor, descrevendo as entidades persistentes, seus atributos, relacionamentos e restrições de integridade.
 
-O modelo apresenta as entidades persistentes, seus atributos, identificadores, relacionamentos e restrições necessários para representar os principais conceitos e operações do sistema, incluindo:
+O modelo deverá atender às regras descritas em `domain-model.md`.
 
-- Cadastro e acompanhamento de pacientes.
-- Tipos de insulina e modelos de canetas aplicadoras.
-- Histórico de tratamentos.
-- Controle de estoque por lote.
-- Movimentações de estoque.
-- Dispensações realizadas aos pacientes.
-- Controle das canetas em posse dos pacientes.
-- Registro de perdas e danos.
-- Controle de reposições.
-- Histórico cadastral e rastreabilidade das operações.
+A primeira versão controlará o estoque de uma única UBS. Instituições externas poderão ser identificadas como origens de recebimentos, fornecedoras de dispensações externas ou destinos de saídas, mas não haverá sincronização de estoques entre unidades.
 
-Este documento é baseado no Modelo de Domínio do CNT Gestor e servirá como referência para a implementação do banco de dados e da camada de persistência da aplicação.
+## 2. Convenções
 
-As regras de negócio, os conceitos do domínio e os comportamentos esperados do sistema são definidos no documento `domain-model.md`. Este documento concentra-se na representação persistente dessas informações.
+### 2.1. Identificadores
 
-## 2. Convenções do Modelo
+- Todas as tabelas terão uma chave primária chamada `id`.
+- Inicialmente, as chaves primárias serão inteiros autoincrementais.
+- As chaves estrangeiras utilizarão o nome da entidade referenciada seguido de `_id`, quando necessário.
+- Não serão utilizados prefixos redundantes nos nomes das colunas.
 
-### 2.1 Identificadores
+### 2.2. Nomenclatura
 
-Todas as entidades persistentes possuirão uma chave primária denominada `id`.
+- Nomes de tabelas no plural.
+- Nomes de tabelas e colunas em `snake_case`.
+- Nomes de tabelas e colunas em inglês, mantendo a documentação em português.
+- Nomes de campos deverão representar claramente seu conteúdo.
 
-Os identificadores utilizarão valores inteiros gerados automaticamente pelo banco de dados.
+### 2.3. Chaves estrangeiras
 
-### 2.2 Nomenclatura
+As relações entre entidades deverão ser representadas por chaves estrangeiras.
 
-Os nomes das tabelas e colunas utilizarão o padrão `snake_case`.
+O SQLite deverá operar com integridade referencial habilitada (`PRAGMA foreign_keys = ON`).
 
-As tabelas utilizarão nomes no plural.
+Exclusões em cascata deverão ser evitadas em registros históricos e operacionais.
 
-Os atributos utilizarão nomes descritivos e adequados ao contexto da informação representada.
+### 2.4. Datas e horários
 
-As chaves primárias serão identificadas pelo nome `id`.
+O modelo deverá distinguir:
 
-As chaves estrangeiras utilizarão o nome da entidade referenciada seguido do sufixo `_id`.
+- Data efetiva: quando o evento ocorreu.
+- Data de registro: quando o evento foi lançado no sistema.
 
-Exemplos:
+Convenções:
 
-- Tabela: `patients`
-- Chave primária: `id`
-- Atributos: `name`, `cns`, `birth_date`
-- Chave estrangeira: `patient_id`
+- `*_date`: datas sem horário.
+- `*_at`: datas e horários.
+- Datas e horários deverão ser armazenados em formato ISO 8601 compatível com SQLite.
+- A aplicação deverá padronizar o tratamento de fuso horário dos registros.
+- Datas desconhecidas deverão ser representadas por `NULL`, nunca por datas estimadas.
 
-### 2.3 Chaves estrangeiras
+### 2.5. Auditoria
 
-As chaves estrangeiras serão utilizadas para estabelecer relacionamentos entre entidades e garantir a integridade referencial dos dados.
+As operações deverão identificar o operador responsável.
 
-Cada chave estrangeira deverá referenciar a chave primária da entidade correspondente.
+Os registros operacionais deverão preservar, quando aplicável:
 
-As regras de exclusão e atualização deverão considerar a natureza dos registros relacionados.
+- `operator_id`.
+- `effective_date` ou `effective_at`.
+- `recorded_at`.
 
-Registros históricos e transacionais não deverão ser removidos em cascata quando isso comprometer a rastreabilidade.
+O sistema não deverá permitir operações operacionais sem operador responsável.
 
-### 2.4 Datas e horários
+### 2.6. Exclusão e inativação
 
-Campos que representam apenas uma data utilizarão nomes terminados em `_date`.
+Registros que participam de históricos não deverão ser excluídos fisicamente quando isso comprometer a rastreabilidade.
 
-Campos que representam data e horário utilizarão nomes terminados em `_at`.
+Cadastros que deixarem de ser utilizados deverão ser inativados quando aplicável.
 
-Exemplos:
+Correções de operações deverão preservar a informação original e identificar a alteração realizada.
 
-- `birth_date`
-- `dispensation_date`
-- `created_at`
-- `updated_at`
-- `changed_at`
+## 3. Entidades
 
-A escolha entre data e data/hora deverá considerar a natureza da informação representada.
+### 3.1. `institutions`
 
-### 2.5 Auditoria
+Representa a UBS responsável pelo estoque local e as instituições externas envolvidas em fornecimentos ou saídas.
 
-As entidades e operações que exigirem rastreabilidade poderão possuir campos de auditoria, conforme sua natureza.
+A primeira versão deverá identificar uma única instituição como responsável pelo estoque controlado.
 
-Os campos poderão incluir:
+Atributos:
 
-- `created_at`
-- `updated_at`
-- `operator_id`
+- `id`: chave primária.
+- `name`: nome da instituição.
+- `institution_type`: tipo da instituição (`ubs`, `caf`, `state`, `municipality`, `other`).
+- `is_local_stock_owner`: indica se é a instituição cujo estoque é controlado.
+- `is_active`: indica se o cadastro está ativo.
+- `created_at`: data e hora do cadastro.
+- `updated_at`: data e hora da última atualização.
 
-Quando for necessário identificar o responsável por uma operação, essa informação deverá ser representada por uma chave estrangeira para `operators`.
+Restrições:
 
-Registros relacionados a dispensações, movimentações de estoque, ocorrências e alterações cadastrais deverão preservar informações suficientes para permitir a identificação e rastreabilidade das operações realizadas.
+- Deve existir no máximo uma instituição marcada como responsável pelo estoque local.
+- A instituição responsável pelo estoque não deverá ser confundida com a UBS de acompanhamento territorial do paciente.
+- Instituições externas poderão ser cadastradas sem que seus estoques sejam controlados.
 
-### 2.6 Exclusão e inativação de registros
-
-Registros históricos ou transacionais não deverão ser removidos fisicamente quando sua exclusão comprometer a rastreabilidade ou a integridade do histórico do sistema.
-
-Isso se aplica especialmente a:
-
-- Movimentações de estoque.
-- Dispensações.
-- Ocorrências.
-- Registros históricos de tratamento.
-- Histórico de situação cadastral.
-- Períodos de acompanhamento territorial.
-- Registros de unificação.
-
-Entidades cadastrais poderão utilizar mecanismos de inativação quando necessário, preservando os registros históricos relacionados.
-
-A estratégia específica de exclusão, inativação ou restrição de remoção será definida de acordo com a natureza de cada entidade e seus relacionamentos.
-
-## 3. Entidades do Modelo
-
-### 3.1 Instituições (`institutions`)
-
-Representa as instituições envolvidas no acompanhamento territorial, no recebimento, na movimentação e na dispensação de canetas.
-
-A entidade deverá permitir o cadastro de diferentes tipos de instituições, incluindo UBS, CAF, órgãos estaduais e instituições de outros municípios.
-
-**Atributos previstos:**
-
-- `id`
-- `name`
-- `institution_type`
-- `is_active`
-- `created_at`
-- `updated_at`
-
-O campo `institution_type` identificará a categoria da instituição.
-
-A instituição responsável pelo acompanhamento territorial de um paciente não será necessariamente a instituição responsável por uma dispensação.
-
-### 3.2 Operadores (`operators`)
+### 3.2. `operators`
 
 Representa os usuários responsáveis pelas operações realizadas no sistema.
 
-O operador será identificado nos registros que exigirem rastreabilidade, como dispensações, movimentações de estoque, ocorrências e alterações cadastrais.
+Atributos:
 
-**Atributos previstos:**
+- `id`: chave primária.
+- `name`: nome do operador.
+- `is_active`: indica se o operador pode realizar novas operações.
+- `created_at`: data e hora do cadastro.
+- `updated_at`: data e hora da última atualização.
 
-- `id`
-- `name`
-- `is_active`
-- `created_at`
-- `updated_at`
+O operador responsável deverá ser identificado em movimentações de estoque, dispensações, ocorrências, alterações de tratamento e operações cadastrais que exijam rastreabilidade.
 
-A autenticação e o gerenciamento de permissões poderão ser detalhados posteriormente.
+### 3.3. `patients`
 
-### 3.3 Pacientes (`patients`)
+Representa o cadastro único de cada pessoa.
 
-Representa o cadastro único de cada paciente no sistema.
+Atributos:
 
-O cadastro deverá ser independente da instituição responsável pelo acompanhamento territorial. Um paciente não deverá possuir cadastros distintos apenas por mudar de UBS ou município.
+- `id`: chave primária.
+- `name`: nome completo.
+- `birth_date`: data de nascimento.
+- `cpf`: CPF, quando informado.
+- `cns`: Cartão Nacional de Saúde, quando informado.
+- `status`: situação cadastral (`active`, `inactive`, `merged`).
+- `merged_into_patient_id`: cadastro principal, quando o registro tiver sido incorporado a outro.
+- `created_at`: data e hora do cadastro.
+- `updated_at`: data e hora da última atualização.
 
-**Atributos previstos:**
+Restrições:
 
-- `id`
-- `name`
-- `birth_date`
-- `cpf`
-- `cns`
-- `status`
-- `merged_into_patient_id`
-- `created_at`
-- `updated_at`
+- Pelo menos um entre `cpf` e `cns` deverá ser informado.
+- CPF e CNS deverão ser únicos quando presentes.
+- Documentos ausentes deverão utilizar `NULL`.
+- Um paciente com status `merged` deverá apontar para o cadastro principal.
+- Um cadastro incorporado não poderá receber novas operações.
+- A referência de incorporação não poderá apontar para o próprio registro.
+- O cadastro principal deverá ser diferente do cadastro incorporado.
 
-O campo `status` representará a situação cadastral atual, utilizando os seguintes valores:
+A situação cadastral não deverá ser confundida com o acompanhamento territorial.
 
-- `active`: cadastro ativo.
-- `inactive`: cadastro inativo.
-- `merged`: cadastro incorporado a outro cadastro durante uma unificação.
+### 3.4. `patient_status_history`
 
-O campo `merged_into_patient_id` será uma chave estrangeira autorreferenciada a `patients.id`. Será preenchido quando o cadastro for incorporado a outro, identificando o cadastro principal.
+Registra alterações na situação cadastral dos pacientes.
 
-Os documentos CPF e CNS serão armazenados como texto, preservando zeros à esquerda e evitando conversões numéricas.
+Atributos:
 
-Pelo menos um dos documentos deverá estar informado. Quando presentes, CPF e CNS deverão ser únicos entre os cadastros.
+- `id`: chave primária.
+- `patient_id`: paciente afetado.
+- `previous_status`: situação anterior.
+- `new_status`: nova situação.
+- `reason_code`: código do motivo.
+- `reason_description`: descrição complementar, obrigatória quando o motivo for `other`.
+- `effective_date`: data efetiva da alteração.
+- `changed_at`: data e hora em que a alteração foi registrada.
+- `operator_id`: operador responsável.
 
-A ausência de um documento será representada por `NULL`, nunca por uma string vazia.
+O falecimento deverá ser registrado por meio de uma alteração para `inactive`, com motivo próprio.
 
-O cadastro deverá preservar os históricos de dispensação, tratamento, acompanhamento, posse de canetas e ocorrências, independentemente de sua situação atual.
+Nesse caso, `effective_date` representará a data do óbito, quando conhecida, e `changed_at` representará quando a informação foi lançada no sistema.
 
-### 3.4 Histórico de situação cadastral (`patient_status_history`)
+Restrições:
 
-Registra as alterações de situação cadastral dos pacientes.
+- Toda alteração deverá preservar o status anterior e o novo status.
+- O operador responsável será obrigatório.
+- A alteração deverá ocorrer em transação.
+- A correção de um falecimento registrado equivocadamente deverá preservar o evento original e sua correção.
 
-A tabela permitirá preservar o histórico de inativações, reativações e outras alterações de situação sem depender de campos que seriam sobrescritos na tabela `patients`.
+### 3.5. `patient_merges`
 
-**Atributos previstos:**
+Registra operações de unificação de cadastros.
 
-- `id`
-- `patient_id`
-- `previous_status`
-- `new_status`
-- `reason_code`
-- `reason_description`
-- `effective_date`
-- `operator_id`
-- `changed_at`
+Atributos:
 
-O campo `reason_code` representará o motivo da alteração por meio de valores controlados.
+- `id`: chave primária.
+- `merged_patient_id`: cadastro incorporado.
+- `primary_patient_id`: cadastro principal.
+- `operator_id`: operador responsável.
+- `merged_at`: data e hora da unificação.
+- `notes`: observações, quando necessárias.
 
-O campo `reason_description` será utilizado para informações complementares, especialmente quando o motivo selecionado for `other`.
+Restrições:
 
-O campo `effective_date` representará a data em que a alteração passou a produzir efeito. Já `changed_at` registrará quando a operação foi efetivamente realizada no sistema.
+- Ambos os cadastros deverão estar ativos no momento da unificação.
+- Os dois identificadores deverão ser diferentes.
+- O cadastro incorporado deverá passar para `merged`.
+- `patients.merged_into_patient_id` deverá apontar para o cadastro principal.
+- A operação deverá ser atômica.
+- O histórico original deverá permanecer associado ao cadastro de origem, permitindo sua rastreabilidade e consulta por meio do cadastro principal.
 
-No caso de falecimento, `effective_date` poderá representar a data do óbito, enquanto `changed_at` registrará quando o falecimento foi informado e registrado.
+### 3.6. `patient_follow_ups`
 
-A tabela deverá permitir identificar o operador responsável por cada alteração.
+Registra os períodos de acompanhamento territorial de cada paciente.
 
-A definição dos códigos de motivo e das regras de preenchimento será detalhada na implementação.
+Atributos:
 
-### 3.5 Unificações de pacientes (`patient_merges`)
+- `id`: chave primária.
+- `patient_id`: paciente acompanhado.
+- `institution_id`: UBS responsável pelo acompanhamento.
+- `start_date`: início do acompanhamento.
+- `end_date`: término do acompanhamento, quando houver.
+- `created_at`: data e hora do registro.
 
-Registra as operações de unificação de cadastros duplicados.
+Regras:
 
-A tabela permitirá identificar os cadastros envolvidos, o cadastro principal escolhido e o operador responsável pela operação.
+- `end_date = NULL` indica acompanhamento vigente.
+- Um paciente poderá possuir, no máximo, um acompanhamento vigente.
+- A instituição deverá corresponder a uma UBS.
+- A mudança de UBS encerra o período anterior e cria outro.
+- O retorno à mesma UBS cria novo período.
+- O encerramento do acompanhamento não altera o cadastro, a posse ou o histórico de dispensações.
+- Pacientes inativos não poderão possuir acompanhamento vigente.
 
-**Atributos previstos:**
+No SQLite, a restrição de um único acompanhamento vigente deverá ser implementada por índice único parcial ou validação transacional equivalente.
 
-- `id`
-- `source_patient_id`
-- `target_patient_id`
-- `operator_id`
-- `merged_at`
+### 3.7. `insulin_types`
 
-O campo `source_patient_id` identificará o cadastro incorporado.
+Representa os tipos de insulina cadastrados.
 
-O campo `target_patient_id` identificará o cadastro principal que permanecerá ativo.
+Atributos:
 
-O campo `merged_at` registrará a data e o horário da unificação.
+- `id`: chave primária.
+- `name`: nome do tipo de insulina.
+- `description`: descrição, quando necessária.
+- `is_active`: indica se o tipo pode ser utilizado em novos tratamentos.
+- `created_at`: data e hora do cadastro.
+- `updated_at`: data e hora da última atualização.
 
-A operação deverá preservar os históricos e a origem dos registros envolvidos.
+Os tipos de insulina deverão ser cadastrados independentemente dos modelos de caneta.
 
-O campo `patients.merged_into_patient_id` permitirá localizar diretamente o cadastro principal a partir do cadastro incorporado.
+### 3.8. `pens`
 
-A tabela `patient_merges` preservará o registro específico da operação, permitindo sua auditoria.
+Representa os modelos de caneta reutilizável.
 
-A estrutura deverá impedir que um cadastro seja incorporado a si próprio e deverá preservar a integridade das referências entre os cadastros envolvidos.
+Atributos:
 
-### 3.6 Acompanhamento territorial (`patient_follow_ups`)
+- `id`: chave primária.
+- `name`: nome ou identificação do modelo.
+- `brand`: marca.
+- `description`: descrição, quando necessária.
+- `is_active`: indica se o modelo pode ser utilizado em novos registros.
+- `created_at`: data e hora do cadastro.
+- `updated_at`: data e hora da última atualização.
 
-Representa os períodos em que um paciente esteve vinculado territorialmente a determinada instituição.
-
-Cada registro representará um período específico de acompanhamento.
-
-**Atributos previstos:**
-
-- `id`
-- `patient_id`
-- `institution_id`
-- `start_date`
-- `end_date`
-- `created_at`
-
-O campo `institution_id` identificará a UBS responsável pelo acompanhamento territorial.
-
-O campo `end_date` será nulo enquanto o acompanhamento estiver vigente.
-
-Quando o paciente mudar para a área de cobertura de outra UBS, o período anterior será encerrado e um novo registro será criado para a nova instituição.
-
-Caso o paciente retorne a uma área anteriormente atendida, deverá ser criado outro período de acompanhamento, sem reabrir o registro histórico anterior.
-
-O encerramento do acompanhamento territorial não deverá apagar o cadastro do paciente nem seu histórico de posse de canetas e dispensações.
-
-### 3.7 Tipos de insulina (`insulin_types`)
-
-Representa os tipos de insulina utilizados nos tratamentos dos pacientes.
-
-**Atributos previstos:**
-
-- `id`
-- `name`
-- `description`
-- `is_active`
-- `created_at`
-- `updated_at`
-
-A tabela deverá permitir o cadastro de novos tipos de insulina sem exigir alterações estruturais no banco de dados.
-
-### 3.8 Modelos de caneta (`pens`)
-
-Representa os modelos de canetas aplicadoras reutilizáveis disponíveis no sistema.
-
-Não haverá identificação individual de cada unidade física de caneta. O controle será realizado por modelo, lote e quantidade.
-
-**Atributos previstos:**
-
-- `id`
-- `name`
-- `description`
-- `is_active`
-- `created_at`
-- `updated_at`
-
-Os modelos iniciais previstos são:
+Modelos iniciais:
 
 - NPH/Regular.
 - Glargina/Lantus.
 
-A tabela deverá permitir o cadastro de novos modelos de caneta.
+O sistema deverá permitir o cadastro de novos modelos.
 
-### 3.9 Compatibilidade entre canetas e insulinas (`pen_insulin_types`)
+### 3.9. `pen_insulin_types`
 
-Representa a relação entre os modelos de caneta e os tipos de insulina compatíveis.
+Relaciona modelos de caneta aos tipos de insulina compatíveis.
 
-A separação dessa relação permite que um modelo de caneta seja compatível com mais de um tipo de insulina e que novos modelos sejam cadastrados sem modificar a estrutura das tabelas.
+Atributos:
 
-**Atributos previstos:**
+- `id`: chave primária.
+- `pen_id`: modelo de caneta.
+- `insulin_type_id`: tipo de insulina.
 
-- `id`
-- `pen_id`
-- `insulin_type_id`
+Restrições:
 
-A combinação entre `pen_id` e `insulin_type_id` deverá ser única.
+- A combinação `pen_id` e `insulin_type_id` deverá ser única.
+- A associação deverá ser utilizada no cálculo automático da necessidade de canetas.
+- Alterações futuras na compatibilidade não deverão modificar retroativamente os registros históricos de tratamento e dispensação.
 
-### 3.10 Tratamentos (`treatments`)
+### 3.10. `treatments`
 
-Representa os períodos de tratamento prescritos para cada paciente.
+Registra os períodos de tratamento prescritos para cada paciente.
 
-Cada registro deverá preservar a composição do tratamento durante determinado período, permitindo consultar alterações anteriores.
+Atributos:
 
-**Atributos previstos:**
+- `id`: chave primária.
+- `patient_id`: paciente.
+- `start_date`: início da vigência.
+- `end_date`: término da vigência, quando houver.
+- `prescriber_name`: nome do médico prescritor.
+- `prescriber_crm`: número do CRM.
+- `prescriber_uf`: UF do CRM.
+- `operator_id`: operador responsável pelo registro.
+- `recorded_at`: data e hora do registro.
+- `notes`: observações, quando necessárias.
 
-- `id`
-- `patient_id`
-- `prescriber_name`
-- `prescriber_crm`
-- `prescriber_uf`
-- `start_date`
-- `end_date`
-- `operator_id`
-- `created_at`
+Restrições:
 
-O prescritor será identificado por nome, CRM e UF.
+- Um paciente não deverá possuir dois tratamentos vigentes simultaneamente.
+- A alteração de tratamento deverá encerrar o período anterior e criar um novo.
+- A vigência deverá ser independente da data de registro.
+- O histórico deverá ser preservado.
+- A alteração deverá exigir prescrição, conforme a regra de domínio.
 
-O operador será responsável pelo registro da alteração no sistema, não pela decisão clínica.
+### 3.11. `treatment_insulin_types`
 
-O campo `end_date` será nulo enquanto o tratamento estiver vigente.
+Relaciona os tratamentos aos tipos de insulina prescritos.
 
-A documentação comprobatória da prescrição deverá ser preservada ou referenciada conforme a solução de armazenamento de documentos definida para a aplicação.
+Atributos:
 
-Uma alteração de tratamento deverá gerar um novo registro, encerrando o período anterior.
+- `id`: chave primária.
+- `treatment_id`: tratamento.
+- `insulin_type_id`: tipo de insulina.
 
-### 3.11 Tipos de insulina do tratamento (`treatment_insulin_types`)
+Restrições:
 
-Representa os tipos de insulina que compõem determinado tratamento.
+- A combinação `treatment_id` e `insulin_type_id` deverá ser única.
+- A composição do tratamento deverá permanecer preservada historicamente.
 
-**Atributos previstos:**
+### 3.12. `batches`
 
-- `id`
-- `treatment_id`
-- `insulin_type_id`
+Representa os lotes de fabricação das canetas.
 
-A combinação entre `treatment_id` e `insulin_type_id` deverá ser única.
+Atributos:
 
-A separação dessa relação permite representar tratamentos com um ou mais tipos de insulina, preservando a composição histórica de cada período.
+- `id`: chave primária.
+- `pen_id`: modelo de caneta.
+- `batch_code`: identificação do lote, quando conhecida.
+- `manufactured_date`: data de fabricação, quando disponível.
+- `manufacturer_expiry_date`: validade do fabricante, quando aplicável.
+- `created_at`: data e hora do cadastro.
 
-### 3.12 Lotes (`batches`)
+Restrições:
 
-Representa os lotes de fabricação das canetas recebidas pelo sistema.
+- Um lote deverá estar associado a um modelo de caneta.
+- A combinação entre modelo e código de lote deverá ser única quando o código estiver informado.
+- A ausência de lote em dispensações externas ou registros históricos será representada por `NULL`.
+- Lotes externos poderão ser cadastrados para preservar a identificação de origem, sem que isso implique entrada no estoque local.
 
-O controle de estoque será realizado por modelo de caneta e lote, sem identificação individual de cada unidade física.
+### 3.13. `dispensations`
 
-**Atributos previstos:**
+Representa uma operação de recebimento de canetas por um paciente.
 
-- `id`
-- `pen_id`
-- `batch_number`
-- `expiration_date`
-- `created_at`
+Atributos:
 
-O número do lote deverá ser associado ao modelo de caneta correspondente.
+- `id`: chave primária.
+- `patient_id`: paciente beneficiado.
+- `origin_type`: origem (`local_ubs`, `external`, `historical`).
+- `institution_id`: instituição fornecedora, quando conhecida.
+- `dispensation_date`: data efetiva da dispensação ou recebimento, quando conhecida.
+- `replacement_authorization_id`: autorização estadual vinculada, quando aplicável.
+- `operator_id`: operador responsável pelo lançamento.
+- `recorded_at`: data e hora do lançamento.
+- `notes`: observações, quando necessárias.
 
-A combinação entre modelo de caneta e número do lote deverá ser única.
+Regras:
 
-A data de validade do produto deverá ser preservada para permitir o controle de estoque e a identificação dos lotes.
+- Uma dispensação poderá conter vários itens.
+- `local_ubs` representa uma dispensação realizada pelo estoque local.
+- `external` representa fornecimento por outra instituição.
+- `historical` representa registro de recebimento anterior, inclusive quando a origem for desconhecida.
+- A data efetiva poderá ser nula somente quando desconhecida em um registro histórico.
+- A data de registro deverá ser obrigatória.
+- Dispensações locais deverão identificar a instituição responsável pelo estoque.
+- Dispensações externas não movimentarão o estoque local.
+- Uma dispensação estadual vinculada a reposição antecipada deverá referenciar a autorização correspondente.
+- O operador responsável pelo lançamento será obrigatório.
 
-### 3.13 Movimentações de estoque (`stock_movements`)
+### 3.14. `dispensation_items`
 
-Registra as movimentações de entrada e saída de canetas no estoque das instituições.
+Representa os itens de cada dispensação.
 
-**Atributos previstos:**
+Atributos:
 
-- `id`
-- `batch_id`
-- `institution_id`
-- `movement_type`
-- `quantity`
-- `operator_id`
-- `reason`
-- `occurred_at`
-- `created_at`
+- `id`: chave primária.
+- `dispensation_id`: dispensação.
+- `pen_id`: modelo de caneta.
+- `batch_id`: lote, quando conhecido.
+- `quantity`: quantidade recebida.
 
-O campo `batch_id` identificará o lote movimentado.
+Restrições:
 
-O campo `institution_id` identificará a instituição cujo estoque foi afetado pela movimentação.
+- A quantidade deverá ser maior que zero.
+- O lote poderá ser nulo quando desconhecido ou não disponível.
+- Em dispensações locais de estoque, o lote será obrigatório.
+- O modelo da caneta deverá corresponder ao lote informado.
+- A quantidade recebida deverá ser preservada e não poderá ser sobrescrita por ocorrências ou vencimentos.
 
-O campo `movement_type` identificará a natureza da movimentação, como entrada, saída, ajuste positivo ou ajuste negativo.
+A posse utilizável será calculada a partir dos itens de dispensação, das ocorrências vinculadas e do prazo administrativo.
 
-A quantidade será armazenada como valor positivo. O tipo de movimentação determinará se o efeito será de entrada ou saída no estoque.
+Não será criada uma tabela de posse duplicada.
 
-O campo `reason` permitirá registrar justificativas para operações que exigirem explicação, como ajustes de estoque.
+### 3.15. `stock_movements`
 
-As movimentações de estoque deverão preservar a identificação de sua origem operacional. Para isso, deverão poder ser associadas aos registros específicos que as originaram, como entradas, dispensações ou transferências.
+Registra todas as alterações no estoque local.
 
-O saldo disponível deverá ser obtido a partir das movimentações registradas, evitando divergências entre um saldo armazenado e o histórico efetivo das operações.
+Atributos:
 
-### 3.14 Dispensações (`dispensations`)
+- `id`: chave primária.
+- `movement_type`: tipo de movimentação.
+- `batch_id`: lote movimentado.
+- `quantity`: quantidade movimentada.
+- `related_institution_id`: instituição de origem ou destino, quando aplicável.
+- `dispensation_item_id`: item de dispensação relacionado, quando o movimento corresponder a uma dispensação.
+- `reason_code`: código do motivo, quando aplicável.
+- `reason_description`: justificativa complementar.
+- `operator_id`: operador responsável.
+- `effective_at`: data e hora efetiva da movimentação.
+- `recorded_at`: data e hora do registro.
+- `reverses_movement_id`: movimentação original, quando se tratar de estorno.
 
-Representa cada operação de dispensação realizada a um paciente.
+Tipos iniciais de movimentação:
 
-Uma dispensação poderá conter um ou mais itens, permitindo registrar entregas parciais ou a entrega de diferentes modelos de caneta em uma mesma operação.
+- `inbound`: entrada no estoque local.
+- `dispensation`: saída por dispensação a paciente.
+- `outbound`: saída destinada a outra instituição.
+- `adjustment_increase`: ajuste positivo.
+- `adjustment_decrease`: ajuste negativo.
+
+Regras:
+
+- A quantidade deverá ser maior que zero.
+- Toda movimentação deverá possuir operador responsável.
+- Toda movimentação deverá estar associada a um lote.
+- A movimentação de dispensação deverá estar vinculada ao item correspondente.
+- Ajustes deverão possuir justificativa.
+- Saídas não poderão resultar em estoque negativo.
+- Correções deverão preservar a movimentação original.
+- Uma saída para outra instituição não criará automaticamente uma entrada nessa instituição.
+- A tabela representa exclusivamente o estoque local controlado pelo sistema.
 
-**Atributos previstos:**
+O saldo de cada lote será calculado pela soma das entradas e ajustes positivos, subtraída das saídas, dispensações e ajustes negativos.
 
-- `id`
-- `patient_id`
-- `institution_id`
-- `operator_id`
-- `treatment_id`
-- `dispensation_date`
-- `dispensation_type`
-- `created_at`
+### 3.16. `occurrences`
 
-O campo `institution_id` identificará a instituição responsável pela dispensação, independentemente da UBS responsável pelo acompanhamento territorial.
+Registra ocorrências que tornam quantidades de canetas não utilizáveis pelo paciente.
 
-O campo `treatment_id` poderá referenciar o tratamento considerado na operação, preservando a relação entre a dispensação e a necessidade registrada naquele momento.
+Atributos:
 
-O campo `dispensation_type` permitirá distinguir dispensações regulares de operações de reposição, quando aplicável.
+- `id`: chave primária.
+- `patient_id`: paciente.
+- `occurrence_date`: data efetiva da ocorrência, quando conhecida.
+- `operator_id`: operador responsável pelo registro.
+- `recorded_at`: data e hora do registro.
+- `notes`: observações e referências documentais.
 
-A data da dispensação deverá ser preservada mesmo quando for diferente da data em que o registro foi inserido no sistema.
+A ocorrência não movimenta o estoque local.
 
-Para dispensações históricas cuja data seja desconhecida, deverá ser possível registrar essa ausência sem atribuir uma data fictícia. A possibilidade de `dispensation_date` ser nula deverá ser restrita a esse cenário.
+A ocorrência não gera automaticamente uma reposição.
 
-### 3.15 Itens de dispensação (`dispensation_items`)
+### 3.17. `occurrence_items`
 
-Representa os modelos, lotes e quantidades de canetas entregues em cada dispensação.
+Relaciona uma ocorrência às quantidades afetadas de dispensações anteriores.
 
-**Atributos previstos:**
+Atributos:
 
-- `id`
-- `dispensation_id`
-- `pen_id`
-- `batch_id`
-- `quantity`
+- `id`: chave primária.
+- `occurrence_id`: ocorrência.
+- `dispensation_item_id`: item da dispensação de origem.
+- `quantity`: quantidade afetada.
 
-Cada item deverá identificar o modelo de caneta, o lote e a quantidade entregue.
+Restrições:
 
-Uma dispensação poderá possuir vários itens, inclusive de lotes diferentes do mesmo modelo.
+- A quantidade deverá ser maior que zero.
+- O item de dispensação deverá pertencer ao paciente da ocorrência.
+- O total de quantidades afetadas não poderá superar o saldo utilizável da origem.
+- Uma ocorrência poderá afetar mais de um item de dispensação.
+- O vínculo com a dispensação de origem deverá ser preservado.
+- Não haverá identificação individual das canetas.
 
-O lote deverá ser obrigatório nas novas dispensações realizadas a partir do estoque controlado da instituição.
+A validação do saldo deverá considerar ocorrências anteriores e o prazo administrativo, dentro de uma transação.
 
-Para registros históricos ou dispensações externas cujo lote seja desconhecido, a possibilidade de utilizar `NULL` deverá ser permitida conforme as regras de registro histórico.
+### 3.18. `replacement_authorizations`
 
-### 3.16 Ocorrências (`occurrences`)
+Registra solicitações e autorizações estaduais para reposição antecipada.
 
-Registra situações relacionadas às canetas que já foram dispensadas aos pacientes, como perdas e danos.
+Atributos:
 
-**Atributos previstos:**
+- `id`: chave primária.
+- `occurrence_id`: ocorrência relacionada.
+- `requested_quantity`: quantidade solicitada.
+- `authorized_quantity`: quantidade autorizada, quando houver.
+- `status`: situação (`requested`, `authorized`, `denied`, `cancelled`).
+- `authority_reference`: protocolo ou identificação da autorização estadual.
+- `requested_at`: data e hora da solicitação.
+- `authorized_at`: data e hora da autorização, quando concedida.
+- `operator_id`: operador responsável pelo registro.
+- `notes`: observações.
 
-- `id`
-- `patient_id`
-- `occurrence_type`
-- `description`
-- `operator_id`
-- `occurred_at`
-- `created_at`
+Regras:
 
-O campo `occurrence_type` identificará a natureza da ocorrência.
+- A autorização deverá estar vinculada a uma ocorrência.
+- A autorização não representa o recebimento efetivo da reposição.
+- A dispensação estadual efetivamente recebida deverá ser registrada separadamente em `dispensations`.
+- A dispensação de reposição deverá referenciar a autorização correspondente.
+- A reposição estadual não movimentará o estoque local.
 
-O campo `description` permitirá registrar informações complementares sobre a situação relatada.
+## 4. Relacionamentos principais
 
-A ocorrência deverá preservar o histórico da situação informada e identificar o operador responsável pelo registro.
+- `patients` 1:N `patient_status_history`.
+- `patients` 1:N `patient_follow_ups`.
+- `patients` 1:N `treatments`.
+- `patients` 1:N `dispensations`.
+- `patients` 1:N `occurrences`.
+- `patients` 1:N `patient_merges`, considerando os papéis de cadastro incorporado e principal.
+- `institutions` 1:N `patient_follow_ups`.
+- `institutions` 1:N `dispensations`, quando a origem for conhecida.
+- `insulin_types` N:N `pens`, por meio de `pen_insulin_types`.
+- `treatments` N:N `insulin_types`, por meio de `treatment_insulin_types`.
+- `pens` 1:N `batches`.
+- `dispensations` 1:N `dispensation_items`.
+- `pens` 1:N `dispensation_items`.
+- `batches` 1:N `dispensation_items`, quando o lote estiver identificado.
+- `batches` 1:N `stock_movements`.
+- `dispensation_items` 1:N `stock_movements`, quando houver movimentação local de dispensação.
+- `occurrences` 1:N `occurrence_items`.
+- `dispensation_items` 1:N `occurrence_items`.
+- `occurrences` 1:N `replacement_authorizations`.
+- `replacement_authorizations` 1:N `dispensations`, quando uma autorização permitir mais de uma entrega ou recebimento parcial.
 
-### 3.17 Itens de ocorrência (`occurrence_items`)
+## 5. Regras de integridade e cálculos derivados
 
-Representa os modelos, lotes e quantidades de canetas relacionados a uma ocorrência.
+### 5.1. Necessidade atual
 
-Essa entidade permite que uma ocorrência envolva mais de um modelo ou lote de caneta.
+A necessidade não será armazenada como um valor fixo em `patients`.
 
-**Atributos previstos:**
+Será calculada a partir do tratamento vigente e das associações entre tipos de insulina e modelos de caneta.
 
-- `id`
-- `occurrence_id`
-- `pen_id`
-- `batch_id`
-- `quantity`
+### 5.2. Posse utilizável
 
-O lote poderá ser nulo quando não houver informação suficiente para identificá-lo, conforme as regras definidas para ocorrências históricas ou externas.
+A posse utilizável será calculada por paciente e modelo, considerando:
 
-A quantidade deverá representar as unidades afetadas pela ocorrência.
+1. Quantidades recebidas em `dispensation_items`.
+2. Quantidades afetadas em `occurrence_items`.
+3. Quantidades cujo prazo administrativo de três anos foi cumprido.
 
-A representação da condição da caneta e de seu efeito sobre a disponibilidade do paciente deverá ser detalhada na implementação, distinguindo situações como perda e dano.
+Uma quantidade com data de referência desconhecida não poderá ser considerada vencida automaticamente.
 
-### 3.18 Autorizações de reposição (`replacement_authorizations`)
+As quantidades históricas incompletas poderão compor a posse quando sua existência e condição utilizável forem conhecidas.
 
-Representa as autorizações necessárias para reposições excepcionais de canetas antes do prazo administrativo regular.
+### 5.3. Elegibilidade
 
-**Atributos previstos:**
+O prazo será calculado separadamente para cada item de dispensação, utilizando a data efetiva de recebimento.
 
-- `id`
-- `occurrence_id`
-- `authorization_reference`
-- `authorized_at`
-- `created_at`
+Ao completar três anos, a quantidade remanescente daquele item deixará de compor a posse utilizável.
 
-A entidade deverá permitir associar uma autorização à ocorrência que motivou a solicitação.
+A nova dispensação terá seu próprio ciclo.
 
-Os dados específicos da autorização estadual, incluindo sua identificação documental e demais informações exigidas, poderão ser detalhados conforme o procedimento operacional definido.
+### 5.4. Estoque local
 
-A existência de uma ocorrência, isoladamente, não deverá ser considerada autorização suficiente para realizar uma reposição excepcional.
+O saldo será derivado de `stock_movements`, agrupado por lote e modelo de caneta.
 
-## 4. Relacionamentos entre Entidades
+A aplicação deverá validar a disponibilidade antes de confirmar saídas e dispensações.
 
-Os principais relacionamentos previstos são:
+As operações deverão ocorrer em transações para impedir saldos inconsistentes.
 
-- Uma instituição poderá estar associada a vários períodos de acompanhamento territorial.
-- Uma instituição poderá possuir várias movimentações de estoque.
-- Uma instituição poderá realizar várias dispensações.
-- Um operador poderá ser responsável por várias operações.
-- Um paciente poderá possuir vários registros históricos de situação cadastral.
-- Um paciente poderá possuir vários períodos de acompanhamento territorial.
-- Um paciente poderá possuir vários tratamentos ao longo do tempo.
-- Um paciente poderá possuir várias dispensações.
-- Um paciente poderá possuir várias ocorrências.
-- Um paciente poderá participar de operações de unificação como cadastro incorporado ou cadastro principal.
-- Um tratamento poderá conter vários tipos de insulina.
-- Um tipo de insulina poderá participar de vários tratamentos.
-- Um modelo de caneta poderá ser compatível com vários tipos de insulina.
-- Um tipo de insulina poderá ser compatível com vários modelos de caneta.
-- Um modelo de caneta poderá possuir vários lotes.
-- Um lote poderá estar associado a várias movimentações de estoque.
-- Uma dispensação poderá possuir vários itens.
-- Um item de dispensação deverá identificar um modelo de caneta, um lote, quando conhecido, e uma quantidade.
-- Uma ocorrência poderá possuir vários itens.
-- Uma ocorrência poderá estar associada a uma autorização de reposição, quando aplicável.
+### 5.5. Atendimento parcial
 
-## 5. Restrições de Integridade e Consistência
+A quantidade necessária será calculada pelo sistema.
 
-Além das chaves primárias e estrangeiras, o banco de dados deverá contemplar restrições que protejam a consistência das informações.
+A quantidade efetivamente dispensada deverá respeitar o estoque disponível.
 
-### 5.1 Pacientes
+A diferença permanecerá como pendência de atendimento.
 
-- Pelo menos um entre CPF e CNS deverá estar informado.
-- CPF e CNS deverão ser únicos quando preenchidos.
-- A situação cadastral deverá aceitar somente os valores previstos: `active`, `inactive` e `merged`.
-- Um cadastro com situação `merged` deverá referenciar o cadastro principal.
-- Um cadastro não poderá ser incorporado a si próprio.
-- Um cadastro não poderá ser utilizado em novas operações enquanto estiver `inactive` ou `merged`.
-- Um cadastro inativo não poderá possuir acompanhamento territorial vigente.
-- Um cadastro incorporado não poderá possuir acompanhamento territorial vigente.
-- A unificação deverá preservar os históricos dos cadastros envolvidos.
+## 6. Índices e restrições recomendados
 
-### 5.2 Histórico de situação cadastral
+Além das chaves primárias e estrangeiras, deverão ser considerados:
 
-- Toda alteração de situação deverá identificar o paciente e o operador responsável.
-- A situação anterior e a nova situação deverão ser registradas.
-- A justificativa deverá ser obrigatória para operações que exigirem motivo.
-- Quando `reason_code` for `other`, a descrição complementar deverá ser obrigatória.
-- A correção de um registro de falecimento deverá preservar a informação sobre o registro original e sua correção.
+- Índices únicos para CPF e CNS quando não nulos.
+- Índice único parcial para um acompanhamento vigente por paciente.
+- Índice único parcial para um tratamento vigente por paciente.
+- Índice único parcial para identificar uma única instituição responsável pelo estoque local.
+- Índice único para associações entre canetas e insulinas.
+- Índice único para associações entre tratamentos e insulinas.
+- Índice único para código de lote dentro de um modelo, quando informado.
+- Índices para consultas por paciente, data, modelo, lote e instituição.
+- Restrições `CHECK` para quantidades positivas e valores controlados de status e tipo de operação.
+- Restrições para impedir autorreferência em unificações e correções.
 
-### 5.3 Acompanhamento territorial
+As restrições que dependem de agregações, como impedir que ocorrências ultrapassem a quantidade ainda utilizável, deverão ser validadas pela aplicação dentro de transações.
 
-- Um paciente não poderá possuir mais de um acompanhamento territorial vigente simultaneamente.
-- A data de encerramento deverá ser posterior ou igual à data de início.
-- Um paciente inativo ou incorporado não poderá possuir acompanhamento vigente.
-- O encerramento de um período não deverá remover seu histórico.
-- A criação de um novo acompanhamento deverá preservar os períodos anteriores.
-- A reativação deverá criar um novo período de acompanhamento.
+## 7. Pontos de implementação
 
-### 5.4 Unificação de cadastros
+Os seguintes itens exigem detalhamento técnico durante a implementação, mas não impedem o início da construção do banco:
 
-- O cadastro incorporado e o cadastro principal deverão ser distintos.
-- Ambos deverão estar ativos antes da unificação.
-- O cadastro incorporado deverá passar para a situação `merged`.
-- O cadastro principal deverá permanecer ativo.
-- A operação deverá ser executada integralmente ou não ser aplicada.
-- O histórico da unificação deverá identificar os cadastros envolvidos e o operador responsável.
+1. Definir a regra determinística de alocação quando uma ocorrência não puder ser associada a uma dispensação específica informada pelo paciente.
+2. Definir os códigos controlados de motivos de inativação, reativação, ocorrência e ajuste.
+3. Definir o mecanismo de estorno e retificação das diferentes operações, preservando os registros originais.
+4. Definir a forma de armazenar ou referenciar prescrições, Boletins de Ocorrência e autorizações estaduais.
+5. Implementar e testar índices parciais e restrições específicas do SQLite.
+6. Implementar consultas ou visões para necessidade, posse utilizável, elegibilidade, estoque e classificação do atendimento.
 
-### 5.5 Tratamentos
+Esses detalhes deverão ser resolvidos sem alterar as regras de domínio já estabelecidas.
 
-- Um paciente poderá possuir vários tratamentos históricos.
-- Um tratamento encerrado deverá preservar sua composição original.
-- A combinação entre `treatment_id` e `insulin_type_id` deverá ser única.
-- Uma alteração de tratamento deverá gerar um novo registro histórico, encerrando o período anterior.
-- A alteração não deverá modificar os registros de dispensação anteriores.
+---
 
-### 5.6 Estoque e lotes
-
-- A quantidade de uma movimentação deverá ser maior que zero.
-- Toda movimentação de estoque deverá identificar o lote correspondente.
-- Uma saída não poderá gerar saldo negativo no estoque da instituição.
-- Movimentações históricas não deverão ser apagadas para corrigir erros; deverão ser registradas operações de correção apropriadas.
-- A combinação entre modelo de caneta e número de lote deverá ser única.
-
-### 5.7 Dispensações
-
-- Toda dispensação deverá identificar o paciente, a instituição responsável e o operador.
-- Toda dispensação deverá possuir pelo menos um item.
-- A quantidade de cada item deverá ser maior que zero.
-- Novas dispensações deverão respeitar a situação cadastral do paciente.
-- Os itens de dispensação deverão identificar o lote utilizado quando a operação ocorrer a partir do estoque controlado.
-- Dispensações externas poderão possuir informações incompletas, desde que essa condição seja registrada sem inventar dados.
-
-### 5.8 Ocorrências e reposições
-
-- Toda ocorrência deverá identificar o paciente e o operador responsável pelo registro.
-- A quantidade de cada item de ocorrência deverá ser maior que zero.
-- Uma reposição excepcional deverá possuir autorização correspondente.
-- O registro de uma ocorrência não deverá alterar automaticamente o estoque da instituição.
-- A ocorrência deverá preservar o histórico da quantidade afetada e sua relação com a posse do paciente.
-
-## 6. Histórico e Rastreabilidade
-
-O modelo deverá preservar o histórico das operações realizadas, permitindo reconstruir a situação administrativa de um paciente e os movimentos das canetas ao longo do tempo.
-
-Deverão ser preservados especialmente:
-
-- Alterações de situação cadastral.
-- Registros e correções de falecimento.
-- Unificações de cadastros.
-- Períodos de acompanhamento territorial.
-- Alterações de tratamento.
-- Tipos de insulina associados a cada tratamento.
-- Dispensações e respectivos itens.
-- Lotes envolvidos nas operações.
-- Movimentações de estoque.
-- Ocorrências e respectivas quantidades.
-- Autorizações de reposição.
-- Operadores responsáveis pelas operações.
-
-Os registros históricos e transacionais deverão permanecer consultáveis mesmo quando o paciente ou uma entidade cadastral deixar de estar ativa.
-
-O modelo deverá permitir identificar a origem dos registros incorporados durante uma unificação, sem apagar ou substituir indevidamente sua rastreabilidade.
-
-## 7. Decisões Pendentes de Detalhamento
-
-Alguns aspectos do modelo dependem de definições operacionais mais específicas e deverão ser detalhados antes da implementação definitiva.
-
-### 7.1 Cadastro de instituições
-
-Definir os tipos de instituição aceitos, seus atributos complementares e as regras de identificação.
-
-### 7.2 Cadastro de operadores
-
-Definir os dados necessários para identificação dos operadores e a integração com o mecanismo de autenticação.
-
-### 7.3 Documentos de prescrição
-
-Definir como as prescrições serão armazenadas, incluindo a possibilidade de anexar arquivos e consultar documentos históricos.
-
-### 7.4 Movimentações entre instituições
-
-Detalhar a representação de transferências, incluindo a relação entre a saída de uma instituição e a entrada na instituição de destino.
-
-### 7.5 Dispensações externas
-
-Definir como serão registradas dispensações realizadas por outras instituições quando não houver acesso ao lote ou aos detalhes completos da operação.
-
-### 7.6 Histórico de dispensações sem lote ou data conhecida
-
-Definir os critérios para registrar informações antigas incompletas sem inventar datas ou números de lote.
-
-### 7.7 Posse atual das canetas
-
-Detalhar a forma de cálculo da quantidade de canetas em posse do paciente, considerando dispensações, perdas, danos, reposições e eventuais recebimentos ou devoluções.
-
-Também deverá ser definida a representação da diferença entre posse física e disponibilidade para utilização.
-
-### 7.8 Prazo administrativo de substituição
-
-Definir como o sistema calculará a elegibilidade considerando a data de dispensação, a ausência de informação sobre a data de primeiro uso e as autorizações excepcionais.
-
-### 7.9 Motivos de inativação e reativação
-
-Definir as opções específicas das listas controladas de motivos, incluindo os critérios para utilização da opção `other`.
-
-### 7.10 Correção de falecimento
-
-Detalhar o procedimento formal para corrigir um registro de falecimento realizado equivocadamente, incluindo as autorizações e os registros necessários.
-
-### 7.11 Transferências de estoque
-
-Definir a estrutura definitiva para registrar uma transferência como operação única, preservando a saída da instituição de origem e a entrada na instituição de destino.
-
-### 7.12 Ajustes de estoque
-
-Definir os tipos de ajuste permitidos, as justificativas obrigatórias e os níveis de autorização necessários.
-
-### 7.13 Origem das movimentações
-
-Detalhar como cada movimentação será vinculada à operação que a originou, incluindo entradas, dispensações, transferências e ajustes.
-
-## 8. Observações para Implementação
-
-Este documento representa a estrutura lógica inicial do banco de dados, não necessariamente o esquema SQL definitivo.
-
-Antes da implementação, deverão ser definidos:
-
-- Os tipos de dados concretos de cada coluna.
-- As restrições `NOT NULL`, `UNIQUE` e `CHECK`.
-- Os índices necessários para consultas frequentes.
-- As regras de integridade referencial e exclusão.
-- As transações necessárias para operações que envolvam várias tabelas.
-- As restrições que dependerem de validação na camada de aplicação.
-- Os mecanismos para garantir que operações compostas sejam executadas integralmente ou não sejam aplicadas.
-
-A implementação deverá preservar as regras estabelecidas no Modelo de Domínio e evitar que a estrutura do banco de dados permita operações incompatíveis com essas regras.
+**Documento complementar:** as regras de negócio e os conceitos representados neste modelo estão descritos em `domain-model.md`.
