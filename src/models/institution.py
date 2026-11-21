@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Index, String, Text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Index, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db.base import Base
@@ -10,20 +10,21 @@ class Institution(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "institution_type IN ('ubs', 'caf', 'state', municipality', 'other')",
+            "institution_type IN ('ubs', 'caf', 'state', 'municipality', 'other')",
             name="check_institution_type",
         ),
+
         Index(
             "uq_institution_local_stock_owner",
             "is_local_stock_owner",
             unique=True,
-            sqlite_where=("is_local_stock_owner = 1")
+            sqlite_where=text("is_local_stock_owner = 1")
         )
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
 
-    name: Mapped[str] =  mapped_column(String, nullable=False)
+    name: Mapped[str] = mapped_column(String, nullable=False)
 
     institution_type: Mapped[str] = mapped_column(String, nullable=False)
 
