@@ -58,7 +58,7 @@ Dessa forma, o CNT Gestor busca integrar o controle de estoque à gestão das ne
 
 ## Status do Projeto
 
-**Estágio atual:** Início da implementação da persistência de dados e dos modelos ORM.
+**Estágio atual:** Implementação inicial da persistência de dados e dos modelos ORM.
 
 **Implementado**
 - Estrutura básica do projeto.
@@ -67,17 +67,19 @@ Dessa forma, o CNT Gestor busca integrar o controle de estoque à gestão das ne
 - Documentação do modelo de domínio.
 - Documentação do modelo de dados.
 - Configuração da conexão com o banco SQLite.
+- Criação automática do diretório de dados.
 - Configuração da classe-base declarativa do SQLAlchemy.
 - Primeiro modelo ORM (`Institution`).
+- Restrições e índice parcial de unicidade no modelo `Institution`, com validações manuais em banco SQLite.
 
 **Próximas etapas**
 - Implementação dos demais modelos ORM.
 - Definição dos relacionamentos e restrições de integridade.
 - Criação e gerenciamento das tabelas do banco de dados.
+- Implementação de testes automatizados.
 - Implementação das regras de negócio.
 - Desenvolvimento dos endpoints REST.
 - Desenvolvimento da interface web.
-- Testes automatizados.
 - Implantação.
 
 ---
@@ -93,6 +95,9 @@ Dessa forma, o CNT Gestor busca integrar o controle de estoque à gestão das ne
 
 ```text
 cnt-gestor/
+├── data/                     # Criado automaticamente; não versionado
+│   └── app.db                # Banco SQLite; criado na primeira conexão
+│
 ├── src/
 │   ├── __init__.py
 │   ├── main.py
@@ -118,6 +123,7 @@ cnt-gestor/
 │       ├── domain-model.md
 │       └── data-model.md
 │
+├── .gitignore
 ├── requirements.txt
 └── README.md
 ```
