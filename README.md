@@ -41,7 +41,7 @@ Dessa forma, o CNT Gestor busca integrar o controle de estoque à gestão das ne
 **Backend**
 - Python
 - FastAPI
-- SQLAlchemy 2.0 (planejado para persistência e mapeamento objeto-relacional)
+- SQLAlchemy 2.x
 
 **Banco de Dados**
 - SQLite (fase inicial)
@@ -58,7 +58,7 @@ Dessa forma, o CNT Gestor busca integrar o controle de estoque à gestão das ne
 
 ## Status do Projeto
 
-**Estágio atual:** Conclusão da modelagem e início da implementação.
+**Estágio atual:** Início da implementação da persistência de dados e dos modelos ORM.
 
 **Implementado**
 - Estrutura básica do projeto.
@@ -66,11 +66,14 @@ Dessa forma, o CNT Gestor busca integrar o controle de estoque à gestão das ne
 - Endpoint de verificação de funcionamento (`/health`).
 - Documentação do modelo de domínio.
 - Documentação do modelo de dados.
+- Configuração da conexão com o banco SQLite.
+- Configuração da classe-base declarativa do SQLAlchemy.
+- Primeiro modelo ORM (`Institution`).
 
 **Próximas etapas**
-- Configuração do banco de dados.
-- Implementação dos modelos e relacionamentos.
-- Criação das tabelas e restrições de integridade.
+- Implementação dos demais modelos ORM.
+- Definição dos relacionamentos e restrições de integridade.
+- Criação e gerenciamento das tabelas do banco de dados.
 - Implementação das regras de negócio.
 - Desenvolvimento dos endpoints REST.
 - Desenvolvimento da interface web.
@@ -99,16 +102,24 @@ cnt-gestor/
 │   │   └── health.py
 │   │
 │   ├── core/
+│   │   ├── __init__.py
 │   │   └── config.py
 │   │
 │   ├── db/
+│   │   ├── __init__.py
+│   │   ├── base.py
 │   │   └── db.py
+│   │
+│   ├── models/
+│   │   ├── __init__.py
+│   │   └── institution.py
 │   │
 │   └── docs/
 │       ├── domain-model.md
 │       └── data-model.md
 │
+├── requirements.txt
 └── README.md
 ```
 
-A estrutura será ampliada conforme a implementação das funcionalidades.
+A estrutura será ampliada conforme a implementação das novas funcionalidades.
