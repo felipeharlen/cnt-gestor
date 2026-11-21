@@ -86,8 +86,8 @@ Dessa forma, o CNT Gestor busca integrar o controle de estoque à gestão das ne
 
 ## Documentação
 
-- [Modelo de Domínio](src/docs/domain-model.md)
-- [Modelo de Dados](src/docs/data-model.md)
+- [Modelo de Domínio](docs/domain-model.md)
+- [Modelo de Dados](docs/data-model.md)
 
 ---
 
@@ -97,6 +97,10 @@ Dessa forma, o CNT Gestor busca integrar o controle de estoque à gestão das ne
 cnt-gestor/
 ├── data/                     # Criado automaticamente; não versionado
 │   └── app.db                # Banco SQLite; criado na primeira conexão
+│
+├── docs/
+│   ├── domain-model.md
+│   └── data-model.md
 │
 ├── src/
 │   ├── __init__.py
@@ -115,13 +119,11 @@ cnt-gestor/
 │   │   ├── base.py
 │   │   └── db.py
 │   │
-│   ├── models/
-│   │   ├── __init__.py
-│   │   └── institution.py
-│   │
-│   └── docs/
-│       ├── domain-model.md
-│       └── data-model.md
+│   └── models/
+│       ├── __init__.py
+│       └── institution.py
+│
+├── tests/                    # Testes automatizados
 │
 ├── .gitignore
 ├── requirements.txt
@@ -129,3 +131,5 @@ cnt-gestor/
 ```
 
 A estrutura será ampliada conforme a implementação das novas funcionalidades.
+
+O diretório `data/` e o banco `app.db` são gerados automaticamente durante a execução e não devem ser enviados ao repositório.
