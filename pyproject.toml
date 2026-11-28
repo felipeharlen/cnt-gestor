@@ -7,3 +7,12 @@ dependencies = [
     "sqlalchemy>=2.1.9",
     "uvicorn>=0.55.0",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

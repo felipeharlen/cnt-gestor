@@ -22,5 +22,5 @@ def enable_foreign_keys(dbapi_connection, connection_record):
 # Fábrica de sessões do banco de dados
 SessionLocal = sessionmaker(
     bind=engine,
-    autoflush=False, 
+    autoflush=False
 )
