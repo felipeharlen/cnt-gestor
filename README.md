@@ -6,7 +6,7 @@ Sistema de gestão de estoque, movimentações e dispensação de canetas aplica
 
 O CNT Gestor é um projeto full-stack voltado à organização e ao controle administrativo de canetas aplicadoras reutilizáveis de insulina.
 
-A aplicação busca integrar o gerenciamento do estoque à gestão das necessidades dos pacientes, permitindo acompanhar dispensações, quantidades em posse dos pacientes, tratamentos vigentes e ocorrências que afetem a disponibilidade das canetas.
+A aplicação busca integrar o gerenciamento de estoque à gestão das necessidades dos pacientes, permitindo acompanhar dispensações, quantidades de canetas em posse dos pacientes, tratamentos vigentes e ocorrências que afetem a disponibilidade desses dispositivos.
 
 O objetivo é proporcionar rastreabilidade, consistência dos registros e maior confiabilidade nos processos de gestão desses materiais.
 
@@ -15,7 +15,7 @@ O objetivo é proporcionar rastreabilidade, consistência dos registros e maior 
 O sistema contempla:
 
 - Cadastro e acompanhamento de pacientes.
-- Registro de tratamentos e seu histórico.
+- Registro de tratamentos e respectivos históricos.
 - Cadastro de instituições fornecedoras e responsáveis por dispensações.
 - Controle de estoque por modelo, lote e quantidade.
 - Registro de entradas, saídas e ajustes de estoque.
@@ -43,20 +43,23 @@ Na configuração inicial, são consideradas as seguintes necessidades:
 
 O cálculo da necessidade atual não elimina o histórico de tratamentos ou as canetas anteriormente recebidas. A disponibilidade deve considerar as quantidades ainda utilizáveis em posse do paciente.
 
-O prazo administrativo de referência para nova dispensação é de três anos por ciclo de recebimento. A data da dispensação é utilizada como referência operacional quando a data do primeiro uso não está disponível. Registros históricos sem data conhecida permanecem indeterminados, sem atribuição de datas presumidas.
+O prazo administrativo de referência para nova dispensação é de três anos por ciclo de recebimento. A data da dispensação é utilizada como referência operacional quando a data do primeiro uso não está disponível.
+
+Registros históricos sem data conhecida permanecem indeterminados, sem atribuição de datas presumidas.
 
 As regras detalhadas do domínio estão documentadas em [Modelo de Domínio](docs/domain-model.md).
 
 ## Tecnologias
 
-| Área | Tecnologias |
+| Área | Tecnologia |
 |---|---|
 | Linguagem | Python 3.14 |
 | API | FastAPI |
 | ORM | SQLAlchemy 2.x |
 | Servidor ASGI | Uvicorn |
 | Banco de dados | SQLite (fase inicial) |
-| Gerenciamento de dependências | uv |
+| Gerenciamento de dependências e ambiente | uv |
+| Testes automatizados | pytest |
 | Controle de versão | Git e GitHub |
 | Ambiente de desenvolvimento | WSL 2, Ubuntu e Visual Studio Code |
 
@@ -85,7 +88,9 @@ Sincronize o ambiente:
 uv sync --locked
 ```
 
-O comando instala as dependências conforme as declarações do `pyproject.toml` e as versões registradas no `uv.lock`.
+O comando cria ou atualiza o ambiente virtual e instala as dependências declaradas no `pyproject.toml`, respeitando as versões registradas no `uv.lock`.
+
+As dependências de desenvolvimento, incluindo o pytest, também são instaladas por padrão.
 
 A versão preferencial do Python é definida no arquivo `.python-version`.
 
@@ -115,14 +120,34 @@ A documentação interativa da API, disponibilizada pelo FastAPI, estará acess�
 http://127.0.0.1:8000/docs
 ```
 
+## Testes
+
+O projeto utiliza pytest para executar testes automatizados.
+
+Para executar toda a suíte de testes:
+
+```bash
+uv run pytest
+```
+
+Os testes utilizam um banco SQLite em memória, isolado do banco de dados utilizado pela aplicação.
+
+A infraestrutura de testes é responsável por criar as tabelas necessárias antes da execução e removê-las ao final.
+
 ## Gerenciamento de dependências
 
 O projeto utiliza o uv para gerenciar as dependências e o ambiente virtual.
 
-Adicionar uma dependência:
+Adicionar uma dependência de produção:
 
 ```bash
 uv add nome-do-pacote
+```
+
+Adicionar uma dependência de desenvolvimento:
+
+```bash
+uv add --dev nome-do-pacote
 ```
 
 Remover uma dependência:
@@ -137,7 +162,7 @@ Sincronizar o ambiente com a configuração do projeto:
 uv sync
 ```
 
-As alterações nas dependências devem ser acompanhadas da atualização e versionamento dos arquivos `pyproject.toml` e `uv.lock`.
+As alterações nas dependências devem ser acompanhadas da atualização e do versionamento dos arquivos `pyproject.toml` e `uv.lock`.
 
 ## Estrutura do projeto
 
@@ -169,7 +194,8 @@ cnt-gestor/
 │       └── institution.py
 │
 ├── tests/
-│   └── .gitkeep
+│   ├── conftest.py
+│   └── test_institution.py
 │
 ├── .gitignore
 ├── .python-version
@@ -185,7 +211,7 @@ cnt-gestor/
 
 ## Estado do desenvolvimento
 
-**Estágio atual:** implementação inicial da camada de persistência e dos modelos ORM.
+**Estágio atual:** implementação inicial da camada de persistência e dos modelos ORM, com infraestrutura de testes automatizados estabelecida.
 
 ### Implementado
 
@@ -197,14 +223,15 @@ cnt-gestor/
 - Classe-base declarativa do SQLAlchemy.
 - Primeiro modelo ORM (`Institution`).
 - Restrições de integridade e índice parcial de unicidade no modelo `Institution`.
-- Validações manuais das restrições do modelo em banco SQLite.
+- Infraestrutura de testes automatizados com pytest.
+- Testes automatizados de criação, valores padrão e restrições de integridade da entidade `Institution`.
 - Gerenciamento do ambiente e das dependências com uv.
 
 ### Próximas etapas
 
 - Implementação dos demais modelos ORM.
 - Definição dos relacionamentos e restrições de integridade.
-- Implementação de testes automatizados.
+- Ampliação da cobertura de testes automatizados.
 - Implementação das regras de negócio.
 - Desenvolvimento dos endpoints REST.
 - Desenvolvimento da interface web.
