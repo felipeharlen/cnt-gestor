@@ -1,24 +1,37 @@
 # CNT Gestor
 
-Projeto full-stack para o desenvolvimento de um sistema de gerenciamento de canetas aplicadoras reutilizáveis de insulina.
+Sistema de gestão de estoque, movimentações e dispensação de canetas aplicadoras reutilizáveis de insulina no contexto da assistência farmacêutica na atenção básica.
 
----
+## Visão geral
 
-## Visão Geral
+O CNT Gestor é um projeto full-stack voltado à organização e ao controle administrativo de canetas aplicadoras reutilizáveis de insulina.
 
-O CNT Gestor é um sistema desenvolvido para controlar o estoque, as movimentações e as dispensações de canetas aplicadoras reutilizáveis de insulina, além de acompanhar as necessidades e a quantidade de canetas em posse dos pacientes.
+A aplicação busca integrar o gerenciamento do estoque à gestão das necessidades dos pacientes, permitindo acompanhar dispensações, quantidades em posse dos pacientes, tratamentos vigentes e ocorrências que afetem a disponibilidade das canetas.
 
-Seu objetivo é proporcionar uma gestão organizada, confiável e rastreável desses materiais no contexto da assistência farmacêutica na atenção básica.
+O objetivo é proporcionar rastreabilidade, consistência dos registros e maior confiabilidade nos processos de gestão desses materiais.
 
----
+## Escopo do sistema
 
-## Domínio do Problema
+O sistema contempla:
 
-Gerenciar canetas aplicadoras reutilizáveis de insulina vai além do simples controle de estoque. Sua dispensação depende de regras relacionadas à prescrição terapêutica, à quantidade de canetas em posse do paciente e aos critérios de elegibilidade para novas dispensações.
+- Cadastro e acompanhamento de pacientes.
+- Registro de tratamentos e seu histórico.
+- Cadastro de instituições fornecedoras e responsáveis por dispensações.
+- Controle de estoque por modelo, lote e quantidade.
+- Registro de entradas, saídas e ajustes de estoque.
+- Histórico de dispensações, inclusive aquelas realizadas por instituições externas.
+- Controle das quantidades de canetas em posse dos pacientes.
+- Registro de ocorrências de perda e dano.
+- Apuração das necessidades de canetas conforme o tratamento vigente.
+- Acompanhamento dos critérios administrativos para novas dispensações.
 
-A quantidade necessária é calculada conforme os tipos de insulina registrados no tratamento vigente e os respectivos modelos de caneta compatíveis.
+O escopo está restrito às canetas aplicadoras reutilizáveis. O controle de insulina, agulhas e outros insumos não faz parte dos objetivos do sistema.
 
-Na configuração inicial:
+## Regras iniciais do domínio
+
+A quantidade necessária de canetas é determinada pelos tipos de insulina utilizados no tratamento vigente e pelos respectivos modelos compatíveis.
+
+Na configuração inicial, são consideradas as seguintes necessidades:
 
 | Insulinas utilizadas | NPH/Regular | Glargina/Lantus |
 |---|---:|---:|
@@ -28,76 +41,108 @@ Na configuração inicial:
 | Glargina | 0 | 1 |
 | Glargina + Regular | 1 | 1 |
 
-O sistema também deve considerar o histórico de tratamentos e dispensações, as quantidades ainda utilizáveis em posse dos pacientes e as ocorrências de perda ou dano.
+O cálculo da necessidade atual não elimina o histórico de tratamentos ou as canetas anteriormente recebidas. A disponibilidade deve considerar as quantidades ainda utilizáveis em posse do paciente.
 
-O prazo administrativo para nova dispensação é de três anos por ciclo de recebimento. A data da dispensação será utilizada como referência operacional quando a data do primeiro uso não estiver disponível. Registros históricos sem data conhecida deverão permanecer identificados como indeterminados, sem atribuição de datas presumidas.
+O prazo administrativo de referência para nova dispensação é de três anos por ciclo de recebimento. A data da dispensação é utilizada como referência operacional quando a data do primeiro uso não está disponível. Registros históricos sem data conhecida permanecem indeterminados, sem atribuição de datas presumidas.
 
-Dessa forma, o CNT Gestor busca integrar o controle de estoque à gestão das necessidades dos pacientes, mantendo o histórico das operações e a rastreabilidade das movimentações.
+As regras detalhadas do domínio estão documentadas em [Modelo de Domínio](docs/domain-model.md).
 
----
+## Tecnologias
 
-## Tecnologias Utilizadas
+| Área | Tecnologias |
+|---|---|
+| Linguagem | Python 3.14 |
+| API | FastAPI |
+| ORM | SQLAlchemy 2.x |
+| Servidor ASGI | Uvicorn |
+| Banco de dados | SQLite (fase inicial) |
+| Gerenciamento de dependências | uv |
+| Controle de versão | Git e GitHub |
+| Ambiente de desenvolvimento | WSL 2, Ubuntu e Visual Studio Code |
 
-**Backend**
-- Python
-- FastAPI
-- SQLAlchemy 2.x
+A interface web está prevista para uma etapa posterior do desenvolvimento.
 
-**Banco de Dados**
-- SQLite (fase inicial)
+## Requisitos
 
-**Frontend**
-- Planejado (interface web)
+Para configurar e executar o projeto, são necessários:
 
-**Ambiente e ferramentas**
-- Git e GitHub
-- Visual Studio Code
-- WSL 2 com Ubuntu
+- Python 3.14.
+- [uv](https://docs.astral.sh/uv/).
+- Git.
 
----
+## Configuração do ambiente
 
-## Status do Projeto
+Clone o repositório e acesse seu diretório:
 
-**Estágio atual:** Implementação inicial da persistência de dados e dos modelos ORM.
+```bash
+git clone git@github.com:felipeharlen/cnt-gestor.git
+cd cnt-gestor
+```
 
-**Implementado**
-- Estrutura básica do projeto.
-- Configuração inicial da aplicação FastAPI.
-- Endpoint de verificação de funcionamento (`/health`).
-- Documentação do modelo de domínio.
-- Documentação do modelo de dados.
-- Configuração da conexão com o banco SQLite.
-- Criação automática do diretório de dados.
-- Configuração da classe-base declarativa do SQLAlchemy.
-- Primeiro modelo ORM (`Institution`).
-- Restrições e índice parcial de unicidade no modelo `Institution`, com validações manuais em banco SQLite.
+Sincronize o ambiente:
 
-**Próximas etapas**
-- Implementação dos demais modelos ORM.
-- Definição dos relacionamentos e restrições de integridade.
-- Criação e gerenciamento das tabelas do banco de dados.
-- Implementação de testes automatizados.
-- Implementação das regras de negócio.
-- Desenvolvimento dos endpoints REST.
-- Desenvolvimento da interface web.
-- Implantação.
+```bash
+uv sync --locked
+```
 
----
+O comando instala as dependências conforme as declarações do `pyproject.toml` e as versões registradas no `uv.lock`.
 
-## Documentação
+A versão preferencial do Python é definida no arquivo `.python-version`.
 
-- [Modelo de Domínio](docs/domain-model.md)
-- [Modelo de Dados](docs/data-model.md)
+## Execução
 
----
+Inicie o servidor de desenvolvimento:
 
-## Estrutura do Projeto
+```bash
+uv run uvicorn src.main:app --reload
+```
+
+A API ficará disponível em:
+
+```text
+http://127.0.0.1:8000
+```
+
+O endpoint de verificação de funcionamento pode ser acessado em:
+
+```text
+http://127.0.0.1:8000/health
+```
+
+A documentação interativa da API, disponibilizada pelo FastAPI, estará acessível em:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+## Gerenciamento de dependências
+
+O projeto utiliza o uv para gerenciar as dependências e o ambiente virtual.
+
+Adicionar uma dependência:
+
+```bash
+uv add nome-do-pacote
+```
+
+Remover uma dependência:
+
+```bash
+uv remove nome-do-pacote
+```
+
+Sincronizar o ambiente com a configuração do projeto:
+
+```bash
+uv sync
+```
+
+As alterações nas dependências devem ser acompanhadas da atualização e versionamento dos arquivos `pyproject.toml` e `uv.lock`.
+
+## Estrutura do projeto
 
 ```text
 cnt-gestor/
-├── data/                     # Criado automaticamente; não versionado
-│   └── app.db                # Banco SQLite; criado na primeira conexão
-│
 ├── docs/
 │   ├── domain-model.md
 │   └── data-model.md
@@ -123,13 +168,44 @@ cnt-gestor/
 │       ├── __init__.py
 │       └── institution.py
 │
-├── tests/                    # Testes automatizados
+├── tests/
+│   └── .gitkeep
 │
 ├── .gitignore
-├── requirements.txt
-└── README.md
+├── .python-version
+├── pyproject.toml
+├── README.md
+└── uv.lock
 ```
 
-A estrutura será ampliada conforme a implementação das novas funcionalidades.
+## Documentação
 
-O diretório `data/` e o banco `app.db` são gerados automaticamente durante a execução e não devem ser enviados ao repositório.
+- [Modelo de Domínio](docs/domain-model.md)
+- [Modelo de Dados](docs/data-model.md)
+
+## Estado do desenvolvimento
+
+**Estágio atual:** implementação inicial da camada de persistência e dos modelos ORM.
+
+### Implementado
+
+- Estrutura inicial da aplicação.
+- Configuração da API com FastAPI.
+- Endpoint de verificação de funcionamento (`/health`).
+- Configuração da conexão com SQLite.
+- Criação automática do diretório de dados.
+- Classe-base declarativa do SQLAlchemy.
+- Primeiro modelo ORM (`Institution`).
+- Restrições de integridade e índice parcial de unicidade no modelo `Institution`.
+- Validações manuais das restrições do modelo em banco SQLite.
+- Gerenciamento do ambiente e das dependências com uv.
+
+### Próximas etapas
+
+- Implementação dos demais modelos ORM.
+- Definição dos relacionamentos e restrições de integridade.
+- Implementação de testes automatizados.
+- Implementação das regras de negócio.
+- Desenvolvimento dos endpoints REST.
+- Desenvolvimento da interface web.
+- Preparação para implantação.
